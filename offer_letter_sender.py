@@ -7,7 +7,7 @@ filtering, retry logic, logging, and pause/stop control.
 
 PDF pipeline:
   1. python-docx placeholder replacement on sampleoffer.docx
-  2. MS Word COM: DOCX -> PDF (uses pywin32, already in requirements)
+  2. pdf_renderer: DOCX -> PDF (LibreOffice headless, reportlab fallback)
   3. pypdf metadata embedding (offer_ref, candidate email, send date, sender)
 
 Reuses:
@@ -61,6 +61,7 @@ from database import (
     create_campaign,
 )
 from enrollment_filter import is_enrolled
+from pdf_renderer import convert_docx_to_pdf, PDFRenderError
 from smtp_service import SenderPool, throttle
 from send_control import is_blocked, get_global_pause_info
 
@@ -77,9 +78,7 @@ if not logger.handlers:
 # CONFIGURATION
 # ============================================================
 
-SELECTED2_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "selected2.csv")
-SAMPLE_OFFER_DOCX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sampleoffer.docx")
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_offers")
+from bot_config import SELECTED_CSV as SELECTED2_CSV, SAMPLE_OFFER_DOCX, OUTPUT_DIR
 
 HR_INDUCTION_DATE = (datetime.now() + timedelta(days=(7 - datetime.now().weekday()) % 7 or 7)).strftime("%d %b %Y")
 
@@ -352,23 +351,16 @@ def _replace_placeholders_in_docx(doc_path, replacements):
 
 
 def _convert_docx_to_pdf(docx_path, pdf_path):
-    """Convert DOCX to PDF using MS Word COM automation (pywin32)."""
-    import win32com.client
-    import pythoncom
+    """Convert DOCX to PDF via the platform-neutral renderer (AC-1, AC-4).
 
-    pythoncom.CoInitialize()
-    try:
-        word = win32com.client.Dispatch("Word.Application")
-        word.Visible = False
-        doc = word.Documents.Open(str(os.path.abspath(docx_path)))
-        doc.SaveAs(str(os.path.abspath(pdf_path)), FileFormat=17)  # 17 = wdFormatPDF
-        doc.Close()
-        word.Quit()
-    finally:
-        pythoncom.CoUninitialize()
+    Phase 1 removed the MS Word COM automation that made this Windows-only.
+    pdf_renderer selects LibreOffice where available and falls back to a
+    reportlab renderer otherwise.
+    """
+    convert_docx_to_pdf(docx_path, pdf_path)
 
     if not os.path.exists(pdf_path):
-        raise RuntimeError("Word did not produce a PDF for %s" % docx_path)
+        raise PDFRenderError("No PDF was produced for %s" % docx_path)
 
 
 def _embed_pdf_metadata(pdf_path, metadata: dict):
@@ -399,7 +391,7 @@ def generate_offer_pdf(applicant: dict, offer_ref: str) -> str:
 
     Steps:
       1. Replace placeholders in sampleoffer.docx
-      2. MS Word COM: DOCX -> PDF (pywin32)
+      2. pdf_renderer: DOCX -> PDF (cross-platform)
       3. Embed metadata via pypdf
 
     Returns the path to the generated PDF.
@@ -456,7 +448,7 @@ def generate_offer_pdf(applicant: dict, offer_ref: str) -> str:
     tmp_docx = os.path.join(tmp_dir, f"temp_{uuid.uuid4().hex}.docx")
     doc.save(tmp_docx)
 
-    # Step 2: MS Word COM: DOCX -> PDF (saves directly to final path)
+    # Step 2: DOCX -> PDF via the platform-neutral renderer
     _convert_docx_to_pdf(tmp_docx, final_pdf)
 
     # Step 3: Embed metadata

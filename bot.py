@@ -55,6 +55,7 @@ from bot_config import (
     COL_CV,
     COL_HEAR_ABOUT,
     HR_INDUCTION_DATE,
+    LOG_FILE,
 )
 from smtp_service import SenderPool, send_and_log, throttle
 
@@ -69,7 +70,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("bot.log", encoding="utf-8"),
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
         logging.StreamHandler(sys.stdout),
     ],
 )
@@ -406,6 +407,9 @@ def process_sheet(worksheet, pool):
 
 def main():
     """Main bot loop — polls the sheet every POLL_INTERVAL_SECONDS."""
+    import config
+    config.require_valid(require_sheets=True, require_smtp=True)
+
     logger.info("=" * 60)
     logger.info("Gayatri Education Project — Email Bot Starting (SMTP)")
     logger.info("=" * 60)

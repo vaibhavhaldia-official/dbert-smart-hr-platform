@@ -27,6 +27,7 @@ from send_control import (
     get_all_status,
 )
 from smtp_service import SenderPool, send_and_log
+import pdf_renderer
 
 from database import (
     init_database, get_dashboard_stats, get_all_applicants,
@@ -44,15 +45,15 @@ from database import (
     upsert_applicant,
 )
 from bot_config import (
-    DATABASE_FILE, FLASK_HOST, FLASK_PORT, FLASK_DEBUG,
-    DEFAULT_SKILL_REQUIREMENTS,
+    DATABASE_FILE, FLASK_HOST, FLASK_PORT, FLASK_DEBUG, FLASK_SECRET_KEY,
+    DEFAULT_SKILL_REQUIREMENTS, UPLOAD_FOLDER,
     RATE_LIMIT_PER_SENDER_PER_HOUR, SENDER_POOL,
-    APPLICATION_URL, WHATSAPP_GROUP_URL,
+    APPLICATION_URL, WHATSAPP_GROUP_URL, TEST_EMAIL_RECIPIENT,
 )
 
 app = Flask(__name__)
-app.secret_key = "gayatri-edu-dashboard-2026"
-app.config["UPLOAD_FOLDER"] = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+app.secret_key = FLASK_SECRET_KEY
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 init_database()
 
@@ -61,9 +62,9 @@ init_database()
 # ============================================================
 
 def get_db():
-    conn = sqlite3.connect(DATABASE_FILE)
-    conn.row_factory = sqlite3.Row
-    return conn
+    """Read-only dashboard queries; shares database.py's hardened settings."""
+    from database import get_connection
+    return get_connection()
 
 
 # ============================================================
@@ -243,8 +244,8 @@ def approve_applicant(applicant_id):
         from bot_config import SERVICE_ACCOUNT_KEY, GOOGLE_SHEET_ID
 
         scopes = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_KEY, scopes=scopes)
-        service = build("sheets", "v4", credentials=creds)
+        creds = _GoogleCredentials.from_service_account_file(SERVICE_ACCOUNT_KEY, scopes=scopes)
+        service = _google_build("sheets", "v4", credentials=creds)
 
         result = service.spreadsheets().values().get(
             spreadsheetId=GOOGLE_SHEET_ID,
@@ -356,6 +357,10 @@ def settings():
         DATABASE_FILE=DATABASE_FILE,
         sender_pool_count=len(SENDER_POOL),
         sheet_name=GOOGLE_SHEET_NAME,
+        pdf_engine=pdf_renderer.active_strategy(),
+        pdf_full_fidelity=pdf_renderer.strategy_detail()["full_fidelity"],
+        flask_host=FLASK_HOST,
+        flask_port=FLASK_PORT,
     )
 
 
@@ -375,14 +380,14 @@ def sync_google_sheet():
         from bot_config import SERVICE_ACCOUNT_KEY, GOOGLE_SHEET_ID, GOOGLE_SHEET_GID
 
         scopes = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_KEY, scopes=scopes)
-        service = build("sheets", "v4", credentials=creds)
+        creds = _GoogleCredentials.from_service_account_file(SERVICE_ACCOUNT_KEY, scopes=scopes)
+        service = _google_build("sheets", "v4", credentials=creds)
 
         # Resolve sheet tab name from GID
         meta = service.spreadsheets().get(spreadsheetId=GOOGLE_SHEET_ID).execute()
         sheet_tab = None
         for s in meta.get("sheets", []):
-            if str(s.get("properties", {}).get("sheetId", "")) == str(GOGLE_SHEET_GID):
+            if str(s.get("properties", {}).get("sheetId", "")) == str(GOOGLE_SHEET_GID):
                 sheet_tab = s["properties"]["title"]
                 break
         if not sheet_tab:
@@ -619,8 +624,16 @@ def api_email_log():
 
 @app.route("/email-log")
 def email_log_page():
-    """Email log viewer page."""
-    return render_template("email_log.html", format_date=format_date)
+    """Email log viewer page.
+
+    The template reads stats.total/sent/bounced/failed/pending/bounce_rate_pct,
+    which were never passed — the page returned a 500 on every request.
+    """
+    return render_template(
+        "email_log.html",
+        stats=get_email_log_stats(),
+        format_date=format_date,
+    )
 
 
 @app.route("/ctas")
@@ -830,7 +843,7 @@ def api_offer_template():
 # TEST EMAIL — send a rendered template to the admin's inbox
 # ============================================================
 
-TEST_EMAIL_RECIPIENT = "ain.sharma.abhinav@gmail.com"
+# Configured via GAYATRI_TEST_RECIPIENT (W-3): was a hardcoded personal address.
 
 
 @app.route("/api/send-test-email", methods=["POST"])
@@ -847,6 +860,12 @@ def api_send_test_email():
     # --- Validate ---
     if template_type not in ("result", "reminder", "offer_letter"):
         return jsonify({"error": "Invalid template type. Use: result, reminder, or offer_letter"}), 400
+
+    if not TEST_EMAIL_RECIPIENT:
+        return jsonify({
+            "error": "No test recipient configured. Set GAYATRI_TEST_RECIPIENT "
+                     "to a developer-owned address."
+        }), 400
 
     # --- Check if globally paused ---
     if is_globally_paused():
@@ -1120,11 +1139,10 @@ def api_terminate_all():
     # Clear thread references (they're daemon threads, will exit after current iteration)
     _campaign_threads.clear()
 
-    # Note: bot.py and offer_letter_sender.py run as separate OS processes
-    # launched via launch_hidden.vbs. Setting all pause flags causes them
-    # to skip processing on their next loop iteration. A full process kill
-    # would require OS-level process management (taskkill) which is best
-    # handled manually or via the Windows Task Manager.
+    # Note: bot.py runs as a separate OS process. Setting all pause flags
+    # causes it to skip processing on its next loop iteration. To stop a
+    # process outright, interrupt it in its own terminal (Ctrl+C) — see the
+    # operations runbook for the platform-neutral stop procedure.
 
     return jsonify({
         "ok": True,
@@ -1136,7 +1154,7 @@ def api_terminate_all():
             "offers": True,
         },
         "stopped_campaigns": stopped_campaigns,
-        "note": "All send systems paused. Bot and offer processes will stop on next loop iteration. Use Task Manager to force-kill if needed.",
+        "note": "All send systems paused. Bot and offer processes stop on their next loop iteration. To stop a process outright, interrupt it in its own terminal (Ctrl+C).",
     })
 
 
@@ -1146,5 +1164,59 @@ def api_send_control_status():
     return jsonify({"paused": paused, "since": since})
 
 
-if __name__ == "__main__":
+# ============================================================
+# ENTRYPOINT (AC-6, AC-9)
+# ============================================================
+
+def _port_is_free(host, port):
+    """Return True if the port can be bound on this host."""
+    import socket
+    probe = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        probe.bind((host if host != "0.0.0.0" else "", port))
+        return True
+    except OSError:
+        return False
+    finally:
+        probe.close()
+
+
+def main():
+    """Console entrypoint: validate config, check the port, then serve."""
+    import config
+
+    config.require_valid()
+
+    if not _port_is_free(FLASK_HOST, FLASK_PORT):
+        sys.stderr.write(
+            "\nPort %d is already in use on %s.\n\n"
+            "  Set GAYATRI_FLASK_PORT to a free port, or stop the process "
+            "using it.\n"
+            % (FLASK_PORT, FLASK_HOST)
+        )
+        if sys.platform == "darwin" and FLASK_PORT == 5000:
+            sys.stderr.write(
+                "  On macOS port 5000 is usually the AirPlay Receiver "
+                "(System Settings > General > AirDrop & Handoff).\n"
+            )
+        sys.stderr.write("\n")
+        sys.exit(1)
+
+    if FLASK_HOST not in ("127.0.0.1", "localhost", "::1"):
+        root_logger.warning(
+            "Dashboard is binding to %s, not loopback. This application has NO "
+            "AUTHENTICATION: anyone who can reach this host can read applicant "
+            "data and trigger email campaigns. Do not expose it without "
+            "authentication, HTTPS and network access controls.", FLASK_HOST
+        )
+
+    root_logger.info(
+        "Dashboard starting on http://%s:%d/ (PDF engine: %s)",
+        FLASK_HOST, FLASK_PORT, pdf_renderer.active_strategy(),
+    )
     app.run(host=FLASK_HOST, port=FLASK_PORT, debug=FLASK_DEBUG)
+
+
+if __name__ == "__main__":
+    main()

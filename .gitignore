@@ -17,6 +17,15 @@ gayatri.db
 # Secrets & Configuration
 service_account.json
 .env
+.env.*
+!.env.example
+*.pem
+*credentials*.json
+!package.json
+
+# Pause sentinels
+.offers_paused
+.send_paused
 
 # Application State & Output
 .bot_paused
@@ -27,8 +36,11 @@ generated_offers/
 # Documents and Media
 *.docx
 QrCode.jpeg
+
+# Scratch notes are ignored, but project documentation is tracked.
 *.md
 !README.md
+!OPERATIONS.md
 
 # Scripts and Executables
 *.bat
