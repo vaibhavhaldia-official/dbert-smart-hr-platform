@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Management — Gayatri Education Project</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5; color: #333; min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #004d66, #0077b6);
+            color: white; padding: 20px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar h1 { font-size: 22px; font-weight: 600; }
+        .navbar .nav-links a {
+            color: white; text-decoration: none; margin-left: 20px; font-size: 14px; opacity: 0.9;
+        }
+        .navbar .nav-links a:hover { opacity: 1; text-decoration: underline; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 30px; }
+
+        .card {
+            background: white; border-radius: 12px; padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px;
+        }
+        .card h2 {
+            font-size: 16px; color: #004d66; margin-bottom: 15px;
+            border-bottom: 2px solid #0077b6; padding-bottom: 8px;
+        }
+
+        .skill-row {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            padding: 16px 0; border-bottom: 1px solid #f0f0f0;
+        }
+        .skill-row:last-child { border-bottom: none; }
+        .skill-domain { font-weight: 600; font-size: 15px; color: #004d66; }
+        .skill-desc { font-size: 13px; color: #888; margin-top: 3px; }
+        .skill-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+        .skill-tag {
+            background: #e8f4fd; color: #004d66; padding: 3px 8px;
+            border-radius: 4px; font-size: 12px;
+        }
+        .cert-tag {
+            background: #fef3c7; color: #92400e; padding: 3px 8px;
+            border-radius: 4px; font-size: 12px; border: 1px solid #fbbf24;
+        }
+        .cert-section { margin-top: 8px; }
+        .cert-label { font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+        .skill-source { font-size: 11px; color: #aaa; margin-top: 4px; }
+        .btn {
+            display: inline-block; padding: 8px 14px; border-radius: 6px;
+            text-decoration: none; font-size: 13px; font-weight: 500;
+            border: none; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary { background: #0077b6; color: white; }
+        .btn-primary:hover { background: #005f8a; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge.manual { background: #d4edda; color: #155724; }
+        .badge.auto_generated { background: #fff3cd; color: #856404; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; color: #555; font-weight: 600; margin-bottom: 4px; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 8px 12px; border: 1px solid #ddd;
+            border-radius: 6px; font-size: 14px; font-family: inherit;
+        }
+        .form-group textarea { height: 80px; resize: vertical; }
+
+        .gen-form {
+            background: #f8f9fa; border-radius: 8px; padding: 20px;
+            margin-bottom: 20px;
+        }
+        .gen-form h3 { font-size: 15px; color: #004d66; margin-bottom: 12px; }
+        .gen-form .form-row { display: flex; gap: 12px; align-items: flex-end; }
+        .gen-form .form-group { flex: 1; margin-bottom: 0; }
+
+        .alert {
+            padding: 12px 16px; border-radius: 8px; margin-bottom: 15px;
+            font-size: 14px; font-weight: 500;
+        }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .alert-warning { background: #fff3cd; color: #856404; }
+
+        .empty-state { text-align: center; padding: 40px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🔧 Skill Management</h1>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/applicants">Applicants</a>
+            <a href="/skills">Skills</a>
+            <a href="/ctas">CTAs</a>
+            <a href="/settings">Settings</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Generate New Skills -->
+        <div class="gen-form">
+            <h3>✏️ Add Skills for a New Domain</h3>
+            <p style="font-size: 13px; color: #888; margin-bottom: 12px;">
+                Enter a new internship domain and its required skills. Skills are managed manually — no LLM needed.
+            </p>
+            <form method="POST" action="/skills/save">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Domain Name</label>
+                        <input type="text" name="domain" placeholder="e.g., Digital Marketing" required>
+                    </div>
+                    <div class="form-group" style="flex:2;">
+                        <label>Skills (comma-separated)</label>
+                        <input type="text" name="skills" placeholder="e.g., SEO, Google Ads, Content Writing, Analytics" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Skills</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Existing Skills -->
+        <div class="card">
+            <h2>📚 Skill Requirements by Domain</h2>
+            {% if skills %}
+                {% for skill in skills %}
+                <div class="skill-row">
+                    <div style="flex: 1;">
+                        <div class="skill-domain">{{ skill.domain }}</div>
+                        <div class="skill-desc">{{ skill.description or '—' }}</div>
+                        <div class="skill-tags">
+                            {% if skill.required_skills_list %}
+                                {% for s in skill.required_skills_list %}
+                                    <span class="skill-tag">{{ s }}</span>
+                                {% endfor %}
+                            {% endif %}
+                            {% if skill.certifications_list %}
+                                <span class="cert-label" style="margin-left:8px;">Certifications:</span>
+                                {% for c in skill.certifications_list %}
+                                    <span class="cert-tag">&#127942; {{ c }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="skill-source">
+                            Source: <span class="badge {{ skill.source }}">{{ skill.source }}</span> ·
+                            Updated: {{ format_date(skill.updated_at) }}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                        <button class="btn btn-sm btn-primary" onclick="editSkills('{{ skill.domain }}', '{{ skill.description or '' }}', [{% for s in skill.required_skills_list %}'{{ s }}'{% if not loop.last %}, {% endif %}{% endfor %}], [{% for c in skill.certifications_list %}'{{ c }}'{% if not loop.last %}, {% endif %}{% endfor %}])">Edit</button>
+                        <form method="POST" action="/skills/delete" style="display:inline;" onsubmit="return confirm('Delete skill requirements for {{ skill.domain }}?')">
+                            <input type="hidden" name="domain" value="{{ skill.domain }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    No skill requirements defined yet.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Edit Form (hidden by default) -->
+        <div class="card" id="edit-form-card" style="display: none;">
+            <h2>✏️ Edit Skills</h2>
+            <form method="POST" action="/skills/save">
+                <div class="form-group">
+                    <label>Domain</label>
+                    <input type="text" name="domain" id="edit-domain" readonly style="background: #f0f0f0;">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" id="edit-description" placeholder="One-line description of this domain..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Required Skills (comma-separated)</label>
+                    <input type="text" name="skills" id="edit-skills" placeholder="e.g., Python, SQL, Pandas, Excel">
+                </div>
+                <div class="form-group">
+                    <label>Certifications (comma-separated, optional)</label>
+                    <input type="text" name="certifications" id="edit-certifications" placeholder="e.g., Google Data Analytics, AWS Cloud Practitioner">
+                </div>
+                <input type="hidden" name="source" value="manual">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('edit-form-card').style.display='none'">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function editSkills(domain, description, skillsList, certList) {
+            document.getElementById('edit-form-card').style.display = 'block';
+            document.getElementById('edit-domain').value = domain;
+            document.getElementById('edit-description').value = description;
+            document.getElementById('edit-skills').value = skillsList.join(', ');
+            document.getElementById('edit-certifications').value = certList.join(', ');
+            document.getElementById('edit-form-card').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

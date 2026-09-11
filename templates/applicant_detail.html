@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Applicant Detail — Gayatri Education Project</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5; color: #333; min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #004d66, #0077b6);
+            color: white; padding: 20px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar h1 { font-size: 22px; font-weight: 600; }
+        .navbar .nav-links a {
+            color: white; text-decoration: none; margin-left: 20px; font-size: 14px; opacity: 0.9;
+        }
+        .navbar .nav-links a:hover { opacity: 1; text-decoration: underline; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 30px; }
+
+        .card {
+            background: white; border-radius: 12px; padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px;
+        }
+        .card h2 {
+            font-size: 16px; color: #004d66; margin-bottom: 15px;
+            border-bottom: 2px solid #0077b6; padding-bottom: 8px;
+        }
+        .info-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        .info-item { padding: 8px 0; }
+        .info-item .label { font-size: 12px; color: #888; font-weight: 600; text-transform: uppercase; }
+        .info-item .value { font-size: 15px; color: #333; margin-top: 2px; }
+
+        .badge {
+            display: inline-block; padding: 4px 12px; border-radius: 12px;
+            font-size: 12px; font-weight: 600; text-transform: uppercase;
+        }
+        .badge.approved { background: #d4edda; color: #155724; }
+        .badge.pending { background: #fff3cd; color: #856404; }
+        .badge.rejected { background: #f8d7da; color: #721c24; }
+        .badge.yes { background: #d1ecf1; color: #0c5460; }
+        .badge.no { background: #e2e3e5; color: #383d41; }
+        .badge.uncertain { background: #fff3cd; color: #856404; }
+
+        .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .btn {
+            display: inline-block; padding: 10px 20px; border-radius: 8px;
+            text-decoration: none; font-size: 14px; font-weight: 600;
+            border: none; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+
+        .log-entry { padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+        .log-entry:last-child { border-bottom: none; }
+        .log-time { color: #aaa; font-size: 11px; }
+
+        .alert {
+            padding: 12px 16px; border-radius: 8px; margin-bottom: 15px;
+            font-size: 14px; font-weight: 500;
+        }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-warning { background: #fff3cd; color: #856404; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>📋 Applicant Detail</h1>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/applicants">← Back to Applicants</a>
+            <a href="/skills">Skills</a>
+            <a href="/ctas">CTAs</a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Applicant Info -->
+        <div class="card">
+            <h2>👤 Applicant Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="label">Name</div>
+                    <div class="value">{{ applicant.name or '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Email</div>
+                    <div class="value">{{ applicant.email }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Internship Domain</div>
+                    <div class="value">{{ applicant.internship_domain or '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">College</div>
+                    <div class="value">{{ applicant.college or '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Semester</div>
+                    <div class="value">{{ applicant.semester or '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">WhatsApp</div>
+                    <div class="value">{{ applicant.whatsapp or '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Available (2 months)</div>
+                    <div class="value">
+                        {% if applicant.available_2months == 'Yes' %}
+                            <span class="badge yes">Yes</span>
+                        {% elif applicant.available_2months == 'No' %}
+                            <span class="badge no">No</span>
+                        {% else %}
+                            {{ applicant.available_2months or '—' }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Laptop & Internet</div>
+                    <div class="value">
+                        {% if applicant.has_laptop_internet == 'Yes' %}
+                            <span class="badge yes">Yes</span>
+                        {% elif applicant.has_laptop_internet == 'No' %}
+                            <span class="badge no">No</span>
+                        {% else %}
+                            {{ applicant.has_laptop_internet or '—' }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Needs Placement</div>
+                    <div class="value">
+                        {% if applicant.needs_placement == 'Yes' %}
+                            <span class="badge yes">Yes</span>
+                        {% elif applicant.needs_placement == 'No' %}
+                            <span class="badge no">No</span>
+                        {% else %}
+                            {{ applicant.needs_placement or '—' }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="label">How Did You Hear</div>
+                    <div class="value">{{ applicant.how_did_you_hear or '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Submitted At</div>
+                    <div class="value">{{ format_date(applicant.submitted_at) }}</div>
+                </div>
+            </div>
+            {% if applicant.cv_file_link %}
+            <div class="info-item" style="margin-top: 12px;">
+                <div class="label">CV File</div>
+                <div class="value">
+                    <a href="{{ applicant.cv_file_link }}" target="_blank">📎 View CV on Google Drive</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Approval Actions -->
+        <div class="card">
+            <h2>✅ Approval Action</h2>
+            <p style="margin-bottom: 12px; color: #555;">
+                Current status: <strong>
+                    {% if applicant.approval_status == 'Approved' %}
+                        <span class="badge approved">Approved</span>
+                    {% elif applicant.approval_status == 'Rejected' %}
+                        <span class="badge rejected">Rejected</span>
+                    {% else %}
+                        <span class="badge pending">Pending</span>
+                    {% endif %}
+                </strong>
+            </p>
+            <form method="POST" action="/applicant/{{ applicant.id }}/approve" style="display:inline;">
+                <button type="submit" name="action" value="approve" class="btn btn-success"
+                    onclick="return confirm('Approve this applicant? This will trigger a confirmation email.')">
+                    ✅ Approve
+                </button>
+            </form>
+            <form method="POST" action="/applicant/{{ applicant.id }}/approve" style="display:inline; margin-left: 8px;">
+                <button type="submit" name="action" value="reject" class="btn btn-danger"
+                    onclick="return confirm('Reject this applicant?')">
+                    ❌ Reject
+                </button>
+            </form>
+        </div>
+
+        <!-- Email History -->
+        <div class="card">
+            <h2>📧 Email History</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="label">Result Email Sent At</div>
+                    <div class="value">{{ format_date(applicant.confirmation_sent_at) or '—' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Email Status</div>
+                    <div class="value">
+                        {% if applicant.confirmation_sent_at %}
+                            <span class="badge yes">Sent</span>
+                        {% else %}
+                            <span class="badge pending">Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processing Log -->
+        <div class="card">
+            <h2>📜 Processing Log</h2>
+            {% if applicant.processing_log %}
+                {% for entry in applicant.processing_log %}
+                <div class="log-entry">
+                    <span class="log-time">{{ format_date(entry.created_at) }}</span>
+                    <strong>{{ entry.action }}</strong>
+                    {% if entry.details %} — {{ entry.details }}{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+            <p style="color: #aaa;">No log entries yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

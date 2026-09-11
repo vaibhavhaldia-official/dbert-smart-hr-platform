@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Gayatri Education Project</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #004d66, #0077b6);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar h1 { font-size: 22px; font-weight: 600; }
+        .navbar .nav-links a {
+            color: white; text-decoration: none; margin-left: 20px;
+            font-size: 14px; opacity: 0.9; transition: opacity 0.2s;
+        }
+        .navbar .nav-links a:hover { opacity: 1; text-decoration: underline; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px; }
+        .section-title {
+            font-size: 18px; font-weight: 600; margin-bottom: 15px;
+            color: #004d66; border-bottom: 2px solid #0077b6;
+            padding-bottom: 8px; margin-top: 25px;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .card {
+            background: white; border-radius: 12px; padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid #0077b6;
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-2px); }
+        .card .label { font-size: 13px; color: #888; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card .value { font-size: 32px; font-weight: 700; color: #004d66; }
+        .card .sub { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .card.green { border-left-color: #28a745; }
+        .card.green .value { color: #28a745; }
+        .card.yellow { border-left-color: #ffc107; }
+        .card.yellow .value { color: #e6a800; }
+        .card.red { border-left-color: #dc3545; }
+        .card.red .value { color: #dc3545; }
+        .card.purple { border-left-color: #6f42c1; }
+        .card.purple .value { color: #6f42c1; }
+
+        .table-container {
+            background: white; border-radius: 12px; padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-top: 15px;
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; text-align: left; padding: 12px; border-bottom: 2px solid #e0e0e0; }
+        td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #f8f9fa; }
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: 12px; font-weight: 600; text-transform: uppercase;
+        }
+        .badge.approved { background: #d4edda; color: #155724; }
+        .badge.pending { background: #fff3cd; color: #856404; }
+        .badge.rejected { background: #f8d7da; color: #721c24; }
+        .badge.yes { background: #d1ecf1; color: #0c5460; }
+        .badge.no { background: #e2e3e5; color: #383d41; }
+        .progress-bar {
+            width: 100%; height: 8px; background: #e9ecef; border-radius: 4px;
+            overflow: hidden; display: inline-block; vertical-align: middle;
+            margin-left: 8px;
+        }
+        .progress-fill {
+            height: 100%; border-radius: 4px;
+        }
+        .progress-fill.green { background: #28a745; }
+
+        .activity-item {
+            padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px;
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-time { color: #aaa; font-size: 11px; }
+        .activity-action { font-weight: 600; color: #004d66; }
+
+        .empty-state { text-align: center; padding: 40px; color: #aaa; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 10px; }
+
+        .btn-upload {
+            background: #007bff; color: white; padding: 10px 20px;
+            border-radius: 6px; text-decoration: none; font-size: 14px;
+            font-weight: 600; transition: background 0.2s; cursor: pointer;
+            border: none; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-upload:hover { background: #0056b3; color: white; }
+
+        .btn-download {
+            background: #28a745; color: white; padding: 10px 20px;
+            border-radius: 6px; text-decoration: none; font-size: 14px;
+            font-weight: 600; transition: background 0.2s;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-download:hover { background: #1e7e34; color: white; text-decoration: none; }
+
+        /* Campaign styles */
+        .campaign-section { margin-bottom: 30px; }
+        .campaign-card {
+            background: white; border-radius: 8px; padding: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .btn { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; padding: 8px 18px; border-radius: 6px; border: none; cursor: pointer; transition: background 0.2s; text-decoration: none; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #1e7e34; color: white; text-decoration: none; }
+        .btn-warning { background: #ffc107; color: #333; }
+        .btn-warning:hover { background: #e0a800; color: #333; text-decoration: none; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; color: white; text-decoration: none; }
+        .btn-sm { padding: 5px 14px; font-size: 13px; border-radius: 4px; }
+        .campaign-card h2 { font-size: 18px; margin-bottom: 12px; }
+        .campaign-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+        .campaign-controls input[type="text"] {
+            padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 14px; min-width: 240px;
+        }
+        .campaign-progress-wrap { margin: 16px 0; }
+        .campaign-progress-bar {
+            height: 24px; background: #e9ecef; border-radius: 12px;
+            overflow: hidden; position: relative;
+        }
+        .campaign-progress-fill {
+            height: 100%; background: linear-gradient(90deg, #28a745, #34ce57);
+            transition: width 0.5s ease; min-width: 0;
+        }
+        .campaign-progress-label {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 600; color: #333;
+            text-shadow: 0 0 2px rgba(255,255,255,0.8);
+        }
+        .campaign-stats-row {
+            display: flex; gap: 20px; flex-wrap: wrap;
+            font-size: 14px; color: #555; margin-top: 8px;
+        }
+        .campaign-stats-row span strong { color: #333; }
+        .sender-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 12px; }
+        .sender-card {
+            background: #f8f9fa; border-radius: 6px; padding: 12px 14px;
+            border: 1px solid #e9ecef;
+        }
+        .sender-card .sender-email { font-size: 12px; color: #666; margin-bottom: 4px; }
+        .sender-card .sender-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+        .sender-mini-bar { height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+        .sender-mini-fill { height: 100%; background: #0077b6; transition: width 0.4s; border-radius: 4px; }
+        .sender-meta { font-size: 11px; color: #888; margin-top: 4px; }
+        .campaign-log {
+            background: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', monospace;
+            font-size: 12px; padding: 14px; border-radius: 6px;
+            max-height: 200px; overflow-y: auto; margin-top: 14px;
+            white-space: pre-wrap; word-break: break-all;
+        }
+        .eligible-badge {
+            display: inline-block; background: #e7f3ff; color: #004d66;
+            padding: 4px 12px; border-radius: 12px; font-size: 13px;
+            font-weight: 500; margin-left: 10px;
+        }
+        .campaign-disabled-msg {
+            background: #d4edda; color: #155724; padding: 12px 16px;
+            border-radius: 6px; margin-bottom: 16px; font-size: 14px;
+        }
+        .template-preview-frame {
+            border: 1px solid #e2e8f0; border-radius: 8px;
+            overflow: hidden; max-height: 500px; overflow-y: auto;
+        }
+        .template-preview-frame iframe {
+            width: 100%; border: none; min-height: 400px;
+        }
+
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 10px; }
+            .cards-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🎓 Gayatri Education Project — Admin Dashboard</h1>
+        <div class="nav-links">
+            <form action="/import/csv" method="post" enctype="multipart/form-data"
+                  onsubmit="return confirm('This will DELETE all existing data and replace it with the uploaded CSV. Are you sure?');"
+                  style="display:inline; margin:0;">
+                <input type="file" name="csv_file" accept=".csv" required style="display:none" id="csvFileInput"
+                       onchange="this.form.submit()">
+                <button type="button" class="btn-upload" onclick="document.getElementById('csvFileInput').click()">
+                    &#x2B06;&#xFE0F; Import CSV
+                </button>
+            </form>
+            <a href="/download/master" class="btn-download">&#x2193; Download Master CSV</a>
+            <a href="/">Dashboard</a>
+            <a href="/applicants">Applicants</a>
+            <a href="/skills">Skills</a>
+            <a href="/ctas">CTAs</a>
+            <a href="/settings">Settings</a>
+        </div>
+    </div>
+
+    <!-- ===================== GLOBAL SEND CONTROL ===================== -->
+    {% if global_send_paused %}
+    <div style="background: #fff3cd; border: 2px solid #f0a500; border-radius: 8px; padding: 14px 20px; margin: 20px 30px 0 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <strong style="color: #856404; font-size: 16px;">&#9888; ALL EMAIL SENDING PAUSED</strong>
+            <span style="color: #856404; margin-left: 12px; font-size: 13px;">
+                Since {{ global_pause_since }} — No emails are being sent by any script.
+            </span>
+        </div>
+        <button onclick="toggleGlobalSend()" class="btn btn-success" id="globalSendToggleBtn" style="font-size: 14px; padding: 8px 20px;">&#x25B6; Resume All Sending</button>
+    </div>
+    {% else %}
+    <div style="background: #d4edda; border: 1px solid #28a745; border-radius: 8px; padding: 10px 20px; margin: 20px 30px 0 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <span style="color: #155724; font-size: 14px;">&#x2705; <strong>Email Sending Active</strong> — All scripts are sending normally.</span>
+        <button onclick="toggleGlobalSend()" class="btn btn-warning" id="globalSendToggleBtn" style="font-size: 14px; padding: 8px 20px;">&#x23F8; Pause All Sending</button>
+    </div>
+    {% endif %}
+    <!-- ===================== PER-SCRIPT SEND CONTROL ===================== -->
+    <div style="margin: 10px 30px 0 30px; display: flex; gap: 10px; flex-wrap: wrap;">
+
+        <!-- Bot Pause Control -->
+        {% if bot_paused %}
+        <div style="flex: 1; min-width: 280px; background: #fff3cd; border: 1px solid #f0a500; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div>
+                <strong style="color: #856404;">&#9888; Result Emails PAUSED</strong>
+                <span style="color: #856404; font-size: 12px; margin-left: 8px;">Since {{ bot_pause_since }}</span>
+            </div>
+            <button onclick="toggleScriptSend('bot')" class="btn" id="botToggleBtn"
+                    style="font-size: 13px; padding: 6px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">&#x25B6; Resume Bot</button>
+        </div>
+        {% else %}
+        <div style="flex: 1; min-width: 280px; background: #d4edda; border: 1px solid #28a745; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span style="color: #155724; font-size: 14px;">&#x2705; <strong>Result Emails Active</strong></span>
+            <button onclick="toggleScriptSend('bot')" class="btn" id="botToggleBtn"
+                    style="font-size: 13px; padding: 6px 16px; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer;">&#x23F8; Pause Bot</button>
+        </div>
+        {% endif %}
+
+        <!-- Campaigns Pause Control -->
+        {% if campaigns_paused %}
+        <div style="flex: 1; min-width: 280px; background: #fff3cd; border: 1px solid #f0a500; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div>
+                <strong style="color: #856404;">&#9888; Campaigns PAUSED</strong>
+                <span style="color: #856404; font-size: 12px; margin-left: 8px;">Since {{ campaigns_pause_since }}</span>
+            </div>
+            <button onclick="toggleScriptSend('campaigns')" class="btn" id="campaignsToggleBtn"
+                    style="font-size: 13px; padding: 6px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">&#x25B6; Resume Campaigns</button>
+        </div>
+        {% else %}
+        <div style="flex: 1; min-width: 280px; background: #d4edda; border: 1px solid #28a745; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span style="color: #155724; font-size: 14px;">&#x2705; <strong>Campaigns Active</strong></span>
+            <button onclick="toggleScriptSend('campaigns')" class="btn" id="campaignsToggleBtn"
+                    style="font-size: 13px; padding: 6px 16px; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer;">&#x23F8; Pause Campaigns</button>
+        </div>
+        {% endif %}
+
+        <!-- Offers Pause Control -->
+        {% if offers_paused %}
+        <div style="flex: 1; min-width: 280px; background: #fff3cd; border: 1px solid #f0a500; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div>
+                <strong style="color: #856404;">&#9888; Offer Letters PAUSED</strong>
+                <span style="color: #856404; font-size: 12px; margin-left: 8px;">Since {{ offers_pause_since }}</span>
+            </div>
+            <button onclick="toggleScriptSend('offers')" class="btn" id="offersToggleBtn"
+                    style="font-size: 13px; padding: 6px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">&#x25B6; Resume Offers</button>
+        </div>
+        {% else %}
+        <div style="flex: 1; min-width: 280px; background: #d4edda; border: 1px solid #28a745; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <span style="color: #155724; font-size: 14px;">&#x2705; <strong>Offer Letters Active</strong></span>
+            <button onclick="toggleScriptSend('offers')" class="btn" id="offersToggleBtn"
+                    style="font-size: 13px; padding: 6px 16px; background: #ffc107; color: #333; border: none; border-radius: 4px; cursor: pointer;">&#x23F8; Pause Offers</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ===================== EMERGENCY TERMINATE ===================== -->
+    <div style="margin: 12px 30px 0 30px; background: linear-gradient(135deg, #fff5f5, #ffe0e0); border: 2px solid #dc3545; border-radius: 8px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <strong style="color: #dc3545; font-size: 15px;">&#x26A0;&#xFE0F; Emergency Stop</strong>
+            <span style="color: #721c24; font-size: 13px; margin-left: 10px;">Instantly pauses all sending (bot, campaigns, offers) and stops active campaigns.</span>
+        </div>
+        <button onclick="terminateAll()" class="btn" id="terminateBtn"
+                style="font-size: 14px; padding: 8px 24px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700;">&#x25A0; TERMINATE ALL</button>
+    </div>
+
+    <!-- ===================== OVERVIEW ===================== -->
+    <div class="container">
+        <div class="section-title">Overview</div>
+        <div class="cards-grid">
+            <div class="card purple">
+                <div class="label">Total Applicants</div>
+                <div class="value">{{ stats.total_applicants }}</div>
+                <div class="sub">{{ stats.by_domain|length }} internship domains</div>
+            </div>
+            <div class="card yellow">
+                <div class="label">Pending Review</div>
+                <div class="value">{{ stats.pending }}</div>
+                <div class="sub">Awaiting decision</div>
+            </div>
+            <div class="card green">
+                <div class="label">Approved</div>
+                <div class="value">{{ stats.approved }}</div>
+                <div class="sub">Confirmed</div>
+            </div>
+            <div class="card red">
+                <div class="label">Rejected</div>
+                <div class="value">{{ stats.rejected }}</div>
+                <div class="sub">Not selected</div>
+            </div>
+            <div class="card green">
+                <div class="label">Emails Sent</div>
+                <div class="value">{{ stats.emails_sent }}</div>
+                <div class="sub">Result emails delivered</div>
+            </div>
+            <div class="card purple">
+                <div class="label">Emails Failed</div>
+                <div class="value">{{ stats.emails_failed or 0 }}</div>
+                <div class="sub">Bounces / errors</div>
+            </div>
+            <div class="card yellow">
+                <div class="label">Bounces</div>
+                <div class="value">{{ stats.bounces or 0 }}</div>
+                <div class="sub">Auto-handled NDRs</div>
+            </div>
+        </div>
+
+        <!-- Domain Breakdown -->
+        <div class="section-title">Applicants by Domain</div>
+        <div class="table-container">
+            {% if stats.by_domain %}
+            <table>
+                <tr><th>Domain</th><th>Count</th><th>Distribution</th></tr>
+                {% for d in stats.by_domain %}
+                <tr>
+                    <td>{{ d.internship_domain }}</td>
+                    <td><strong>{{ d.count }}</strong></td>
+                    <td style="width: 40%;">
+                        <div class="progress-bar">
+                            <div class="progress-fill green" style="width: {{ (d.count / stats.total_applicants * 100) if stats.total_applicants else 0 }}%"></div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <div class="empty-state"><div class="icon">📊</div>No data yet. Applicants will appear here once they submit the form.</div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="section-title">Recent Activity</div>
+        <div class="table-container">
+            {% if stats.recent_activity %}
+                {% for entry in stats.recent_activity %}
+                <div class="activity-item">
+                    <span class="activity-action">{{ entry.action }}</span> —
+                    {{ entry.applicant_email }}
+                    {% if entry.details %} — {{ entry.details }}{% endif %}
+                    <div class="activity-time">{{ format_date(entry.created_at) }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="empty-state"><div class="icon">📋</div>No activity yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ===================== TEST EMAIL ===================== -->
+    <div class="container" style="margin-top: 24px;">
+        <div class="section-title">Send Test Email</div>
+        <div class="campaign-card">
+            <p style="color: #666; font-size: 14px; margin-bottom: 16px;">
+                Select a template below to send a test email to <strong>ain.sharma.abhinav@gmail.com</strong>.
+                This lets you preview exactly what recipients will see in their inbox.
+            </p>
+            <div style="display:flex; align-items:center; gap: 10px; flex-wrap: wrap;">
+                <select id="testTemplateSelect" style="padding: 10px 16px; border: 1px solid #dee2e6; border-radius: 6px; font-size: 14px; min-width: 220px;">
+                    <option value="result">Result Email (application received)</option>
+                    <option value="reminder">Reminder Email (follow-up)</option>
+                    <option value="offer_letter">Offer Letter Email</option>
+                </select>
+                <button class="btn btn-success" id="sendTestEmailBtn" onclick="sendTestEmail()">
+                    &#x2709; Send Test Email
+                </button>
+            </div>
+            <div id="testEmailResult" style="margin-top: 12px;"></div>
+        </div>
+    </div>
+
+    <!-- ===================== EMAIL ANALYTICS ===================== -->
+    <div class="container" style="margin-top: 24px;">
+        <div class="section-title">Email Analytics</div>
+
+        <!-- Top-Level Counts -->
+        <div class="cards-grid">
+            <div class="card blue">
+                <div class="label">Total Emails Sent</div>
+                <div class="value" id="analyticsTotal">{{ email_stats.total or 0 }}</div>
+                <div class="sub">All time across all phases</div>
+            </div>
+            <div class="card green">
+                <div class="label">Delivered</div>
+                <div class="value" id="analyticsDelivered">{{ email_stats.sent or 0 }}</div>
+                <div class="sub">Successfully delivered</div>
+            </div>
+            <div class="card red">
+                <div class="label">Bounced / Failed</div>
+                <div class="value" id="analyticsFailed">{{ email_stats.failed or 0 }}</div>
+                <div class="sub">Bounced or failed sends</div>
+            </div>
+            <div class="card yellow">
+                <div class="label">Pending</div>
+                <div class="value" id="analyticsPending">{{ email_stats.pending or 0 }}</div>
+                <div class="sub">Queued or in progress</div>
+            </div>
+        </div>
+
+        <!-- Success Rate Bar -->
+        <div class="campaign-card" style="margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span style="font-size: 14px; color: #555;"><strong>Overall Success Rate:</strong> {{ email_stats.success_rate_pct }}%</span>
+                <span style="font-size: 13px; color: #888;">{{ email_stats.sent }} sent / {{ email_stats.total }} total &bull; Bounce rate: {{ email_stats.bounce_rate_pct }}%</span>
+            </div>
+            <div style="height: 10px; background: #e9ecef; border-radius: 5px; overflow: hidden; margin-top: 8px;">
+                <div style="height: 100%; width: {{ email_stats.success_rate_pct }}%; background: linear-gradient(90deg, #28a745, #34ce57); border-radius: 5px; transition: width 0.5s;"></div>
+            </div>
+        </div>
+
+        <!-- Breakdown by Phase -->
+        <div class="campaign-card" style="margin-top: 16px;">
+            <h2>Emails by Phase</h2>
+            <div style="overflow-x: auto; margin-top: 12px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="text-align: left; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; color: #555;">Phase</th>
+                            <th style="text-align: center; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; color: #555;">Total</th>
+                            <th style="text-align: center; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; color: #28a745;">Delivered</th>
+                            <th style="text-align: center; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; color: #dc3545;">Failed</th>
+                            <th style="text-align: center; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; color: #888;">Pending</th>
+                            <th style="text-align: left; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; color: #555;">Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set phase_info = {
+                            'result': {'label': 'Result Emails', 'icon': '📧'},
+                            'reminder': {'label': 'Reminder Campaigns', 'icon': '📬'},
+                            'offer_letter': {'label': 'Offer Letters', 'icon': '📄'}
+                        } %}
+                        {% for phase_key, phase_data in email_stats.by_phase.items() %}
+                        {% set p_total = phase_data.get('sent', 0) + phase_data.get('failed', 0) + phase_data.get('pending', phase_data.get('queued', 0)) %}
+                        {% set p_sent = phase_data.get('sent', 0) %}
+                        {% set p_failed = phase_data.get('failed', 0) %}
+                        {% set p_pending = phase_data.get('pending', phase_data.get('queued', 0)) %}
+                        {% set p_pct = (p_sent + p_failed) / p_total * 100 if p_total else 0 %}
+                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                            <td style="padding: 10px 12px;">
+                                {{ phase_info.get(phase_key, {'label': phase_key, 'icon': '📌'}).icon }}
+                                <strong>{{ phase_info.get(phase_key, {'label': phase_key}).label }}</strong>
+                            </td>
+                            <td style="text-align: center; padding: 10px 12px; font-weight: 600;">{{ p_total }}</td>
+                            <td style="text-align: center; padding: 10px 12px; color: #28a745; font-weight: 600;">{{ p_sent }}</td>
+                            <td style="text-align: center; padding: 10px 12px; color: #dc3545; font-weight: 600;">{{ p_failed }}</td>
+                            <td style="text-align: center; padding: 10px 12px; color: #888;">{{ p_pending if p_pending else 0 }}</td>
+                            <td style="padding: 10px 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="flex: 1; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;">
+                                        <div style="height: 100%; width: {{ p_pct }}%; background: linear-gradient(90deg, #28a745, #34ce57); border-radius: 4px;"></div>
+                                    </div>
+                                    <span style="font-size: 12px; color: #888; min-width: 36px;">{{ p_pct }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Per-Sender Breakdown -->
+        <div class="campaign-card" style="margin-top: 16px;">
+            <h2>Per-Sender Breakdown (All Time)</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 14px;">Sending address, success count, failures, and remaining hourly capacity.</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 12px;">
+                {% set sender_pool = SENDER_POOL %}
+                {% for s in sender_pool %}
+                {% set s_email = s.email %}
+                {% set s_data = email_stats.by_sender.get(s_email, {}) %}
+                {% set s_sent = s_data.get('sent', 0) %}
+                {% set s_failed = s_data.get('failed', 0) %}
+                {% set s_total = s_data.get('total', s_sent + s_failed) %}
+                {% set s_rate = (s_sent / s_total * 100) | round if s_total else 0 %}
+                <div class="sender-card" style="border-left: 4px solid {{ '#28a745' if s_rate > 90 else '#ffc107' if s_rate > 50 else '#dc3545' }};">
+                    <div class="sender-email">{{ s_email }}</div>
+                    <div class="sender-name">{{ s.name }}</div>
+                    <div style="display: flex; gap: 16px; margin-top: 8px; font-size: 13px;">
+                        <span style="color: #28a745;">&#x2705; {{ s_sent }} sent</span>
+                        <span style="color: #dc3545;">&#x274C; {{ s_failed }} failed</span>
+                        <span style="color: #888;">Total: {{ s_total }}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+                        <div class="sender-mini-bar" style="flex: 1;">
+                            <div class="sender-mini-fill" style="width: {{ s_rate }}%; background: {{ '#28a745' if s_rate > 90 else '#ffc107' if s_rate > 50 else '#dc3545' }};"></div>
+                        </div>
+                        <span style="font-size: 12px; color: #888;">{{ s_rate }}%</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Offer Letters Detail -->
+        {% if email_stats.offer_total > 0 or offer_active_campaign %}
+        <div class="campaign-card" style="margin-top: 16px;">
+            <h2>Offer Letter Emails</h2>
+            <div class="campaign-stats-row" style="margin-top: 12px;">
+                <span>Total: <strong>{{ email_stats.offer_total or 0 }}</strong></span>
+                <span style="color: #28a745;">Delivered: <strong>{{ email_stats.offer_sent or 0 }}</strong></span>
+                <span style="color: #dc3545;">Failed: <strong>{{ email_stats.offer_failed or 0 }}</strong></span>
+            </div>
+            {% if email_stats.offer_by_sender %}
+            <div class="section-title" style="margin-top: 16px; margin-bottom: 6px; font-size: 14px;">Offer Emails by Sender</div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="text-align: left; padding: 8px 12px; border-bottom: 2px solid #e2e8f0;">Sender</th>
+                            <th style="text-align: center; padding: 8px 12px; border-bottom: 2px solid #e2e8f0;">Total</th>
+                            <th style="text-align: center; padding: 8px 12px; border-bottom: 2px solid #e2e8f0; color: #28a745;">Delivered</th>
+                            <th style="text-align: center; padding: 8px 12px; border-bottom: 2px solid #e2e8f0; color: #dc3545;">Failed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sender, counts in email_stats.offer_by_sender.items() %}
+                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                            <td style="padding: 8px 12px; font-weight: 500;">{{ sender }}</td>
+                            <td style="text-align: center; padding: 8px 12px;">{{ counts.total }}</td>
+                            <td style="text-align: center; padding: 8px 12px; color: #28a745;">{{ counts.sent }}</td>
+                            <td style="text-align: center; padding: 8px 12px; color: #dc3545;">{{ counts.failed }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Recent 10 Sends -->
+        <div class="campaign-card" style="margin-top: 16px;">
+            <h2>Recent Email Activity (last 30)</h2>
+            <div style="overflow-x: auto; margin-top: 12px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th style="text-align: left; padding: 8px 10px; border-bottom: 2px solid #e2e8f0; color: #555;">Time</th>
+                            <th style="text-align: left; padding: 8px 10px; border-bottom: 2px solid #e2e8f0; color: #555;">To</th>
+                            <th style="text-align: left; padding: 8px 10px; border-bottom: 2px solid #e2e8f0; color: #555;">From</th>
+                            <th style="text-align: left; padding: 8px 10px; border-bottom: 2px solid #e2e8f0; color: #555;">Phase</th>
+                            <th style="text-align: center; padding: 8px 10px; border-bottom: 2px solid #e2e8f0; color: #555;">Status</th>
+                            <th style="text-align: center; padding: 8px 10px; border-bottom: 2px solid #e2e8f0; color: #555;">Delivery</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in email_stats.recent %}
+                        <tr style="border-bottom: 1px solid #f5f5f5;">
+                            <td style="padding: 7px 10px; white-space: nowrap;">{{ format_date(entry.sent_at) }}</td>
+                            <td style="padding: 7px 10px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ entry.to_email }}</td>
+                            <td style="padding: 7px 10px; font-size: 12px; color: #666;">{{ entry.from_email or '—' }}</td>
+                            <td style="padding: 7px 10px; font-size: 12px;">{{ entry.phase or 'result' }}</td>
+                            <td style="text-align: center; padding: 7px 10px;">
+                                {% if entry.status == 'sent' %}<span style="color: #28a745; font-weight: 600;">&#x2705; Sent</span>
+                                {% elif entry.status == 'failed' %}<span style="color: #dc3545; font-weight: 600;">&#x274C; Failed</span>
+                                {% else %}<span style="color: #888;">{{ entry.status }}</span>{% endif %}
+                            </td>
+                            <td style="text-align: center; padding: 7px 10px; font-size: 12px;">
+                                {% if entry.delivery_status == 'delivered' %}<span style="color: #28a745;">Delivered</span>
+                                {% elif entry.delivery_status == 'bounced' %}<span style="color: #dc3545;">Bounced</span>
+                                {% elif entry.delivery_status == 'opened' %}<span style="color: #17a2b8;">Opened</span>
+                                {% elif entry.delivery_status %}{{ entry.delivery_status }}
+                                {% else %}<span style="color: #ccc;">—</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== OFFER LETTERS ===================== -->
+    <div class="container">
+        <div class="section-title">Offer Letters</div>
+
+        <div class="campaign-card" style="margin-bottom: 20px;">
+            <h2>Send Offer Letters to Selected Interns</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 16px;">
+                Generates personalized PDF offer letters from <code>sampleoffer.docx</code> and sends them
+                via email. Only sends to interns who have already received their result email and are
+                not yet enrolled. Uses the same rate-limited SMTP pool.
+            </p>
+
+            <div id="offerStatusArea">
+                {% if offer_active_campaign %}
+                <div class="campaign-disabled-msg">
+                    Offer Campaign <strong>#{{ offer_active_campaign.id }} — {{ offer_active_campaign.campaign_name }}</strong>
+                    is currently <strong id="offerActiveStatusLabel">{{ offer_active_campaign.status }}</strong>.
+                    <span id="offerEligibleBadge" class="eligible-badge">Loading eligible count...</span>
+                </div>
+                <div class="campaign-controls">
+                    {% if offer_active_campaign.status == 'running' %}
+                    <button class="btn btn-warning" onclick="pauseOfferCampaign({{ offer_active_campaign.id }})">&#x23F8; Pause</button>
+                    {% elif offer_active_campaign.status == 'paused' %}
+                    <button class="btn btn-success" onclick="resumeOfferCampaign({{ offer_active_campaign.id }})">&#x25B6; Resume</button>
+                    {% endif %}
+                    <button class="btn btn-danger" onclick="stopOfferCampaign({{ offer_active_campaign.id }})">&#x25A0; Stop</button>
+                </div>
+                {% else %}
+                <form id="offerStartForm" onsubmit="startOfferCampaign(event)" style="display:flex; align-items:center; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" name="campaign_name" value="Offer Letter Campaign" placeholder="Campaign name">
+                    <button type="submit" class="btn btn-success" id="startOfferBtn">&#x1F4C4; Send Offer Letters</button>
+                    <span id="offerEligibleBadge" class="eligible-badge">Checking...</span>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Live Progress -->
+        {% if offer_active_campaign %}
+        <div class="campaign-card" style="margin-bottom: 20px;" id="offerProgressCard">
+            <h2>Offer Campaign Progress</h2>
+            <div class="campaign-progress-wrap">
+                <div class="campaign-progress-bar">
+                    <div class="campaign-progress-fill" id="offerProgressFill" style="width: 0%;"></div>
+                    <div class="campaign-progress-label" id="offerProgressLabel">0 / 0</div>
+                </div>
+            </div>
+            <div class="campaign-stats-row">
+                <span>Queued: <strong id="offerStatQueued">{{ offer_active_campaign.total_queued or 0 }}</strong></span>
+                <span>Sent: <strong id="offerStatSent" style="color:#28a745;">{{ offer_active_campaign.total_sent or 0 }}</strong></span>
+                <span>Failed: <strong id="offerStatFailed" style="color:#dc3545;">{{ offer_active_campaign.total_failed or 0 }}</strong></span>
+                <span>Last sender: <strong id="offerStatLastSender">{{ offer_active_campaign.last_sender_email or '—' }}</strong></span>
+            </div>
+
+            <!-- Sender Status -->
+            <div class="section-title" style="margin-top: 18px; margin-bottom: 6px;">Sender Status (current hour)</div>
+            <div class="sender-grid" id="offerSenderGrid">
+                {% for s in offer_sender_stats %}
+                <div class="sender-card">
+                    <div class="sender-email">{{ s.email }}</div>
+                    <div class="sender-name">{{ s.name }}</div>
+                    <div class="sender-mini-bar">
+                        <div class="sender-mini-fill" style="width: {{ (s.sent / s.limit * 100) | round }}%;"></div>
+                    </div>
+                    <div class="sender-meta">{{ s.sent }} / {{ s.limit }} sent &mdash; {{ s.remaining }} remaining</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Per-Recipient Send Log -->
+            <div class="section-title" style="margin-top: 18px; margin-bottom: 6px;">Per-Recipient Send Log (last 50)</div>
+            <div style="overflow-x: auto;">
+                <table class="data-table" id="offerRecipientTable" style="width:100%; font-size: 13px;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>To Email</th>
+                            <th>Status</th>
+                            <th>Delivery</th>
+                            <th>Sent At</th>
+                            <th>Error</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="6" style="text-align:center; color:#888;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Live Log -->
+        <div class="campaign-card">
+            <h2>Offer Campaign Log</h2>
+            <div class="campaign-log" id="offerCampaignLog">Waiting for campaign data...</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ===================== OFFER EMAIL TEMPLATE PREVIEW ===================== -->
+    <div class="container" style="margin-top: 24px;">
+        <div class="section-title">Offer Letter Email Template Preview</div>
+        <div class="campaign-card">
+            <p style="color: #666; font-size: 14px; margin-bottom: 16px;">
+                This is the HTML email template sent with offer letters. Verify the content, styling, and
+                Reply-To address before launching a campaign. <strong>Reply-To:</strong> contactus@gayatrieducation.tech
+            </p>
+            <div class="template-tabs" style="margin-bottom: 12px;">
+                <button class="btn btn-sm" id="templateTabHtml" onclick="showTemplateTab('html')" style="background:#0077b6; color:white;">HTML Preview</button>
+                <button class="btn btn-sm" id="templateTabText" onclick="showTemplateTab('text')" style="background:#e9ecef; color:#333;">Plain Text</button>
+                <button class="btn btn-sm" id="templateTabSubject" onclick="showTemplateTab('subject')" style="background:#e9ecef; color:#333;">Subject Lines</button>
+            </div>
+            <div id="templatePreviewHtml" class="template-preview-frame">
+                <div style="text-align:center; padding: 40px; color:#888;">Loading template...</div>
+            </div>
+            <div id="templatePreviewText" class="template-preview-frame" style="display:none;">
+                <div style="text-align:center; padding: 40px; color:#888;">Loading template...</div>
+            </div>
+            <div id="templatePreviewSubject" class="template-preview-frame" style="display:none;">
+                <div style="text-align:center; padding: 40px; color:#888;">Loading subjects...</div>
+            </div>
+        </div>
+    <!-- ===================== CAMPAIGN JS ===================== -->
+    <script>
+        // ---- Offer Email Template Preview ----
+        let templateData = null;
+
+        function showTemplateTab(tab) {
+            document.querySelectorAll('.template-preview-frame').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.template-tabs .btn').forEach(b => {
+                b.style.background = '#e9ecef'; b.style.color = '#333';
+            });
+            if (tab === 'html') {
+                document.getElementById('templatePreviewHtml').style.display = 'block';
+                document.getElementById('templateTabHtml').style.background = '#0077b6';
+                document.getElementById('templateTabHtml').style.color = 'white';
+            } else if (tab === 'text') {
+                document.getElementById('templatePreviewText').style.display = 'block';
+                document.getElementById('templateTabText').style.background = '#0077b6';
+                document.getElementById('templateTabText').style.color = 'white';
+            } else {
+                document.getElementById('templatePreviewSubject').style.display = 'block';
+                document.getElementById('templateTabSubject').style.background = '#0077b6';
+                document.getElementById('templateTabSubject').style.color = 'white';
+            }
+        }
+
+        function loadOfferTemplate() {
+            fetch('/api/offer-letters/template')
+                .then(r => r.json())
+                .then(data => {
+                    templateData = data;
+                    document.getElementById('templatePreviewHtml').innerHTML = data.html;
+                    document.getElementById('templatePreviewText').innerHTML = '<pre style="white-space:pre-wrap; font-family:monospace; background:#f8f9fa; padding:16px; border-radius:6px; font-size:13px; line-height:1.6;">' + escapeHtml(data.text) + '</pre>';
+                    let subjectsHtml = '<ul style="padding-left:20px; font-size:14px; line-height:2;">';
+                    [
+                        'Your Internship Offer — {name} | Gayatri Education Project',
+                        'Internship Offer: {start_date} — {name} | Gayatri Education',
+                        'Welcome Aboard {name}! | Gayatri Education Project',
+                        'Offer Letter: {name} — {domain} | Gayatri Education Project',
+                    ].forEach(s => {
+                        subjectsHtml += '<li>' + s + '</li>';
+                    });
+                    subjectsHtml += '</ul>';
+                    subjectsHtml += '<p style="font-size:13px; color:#666; margin-top:8px;"><strong>Example with sample data:</strong> ' + escapeHtml(data.subject) + '</p>';
+                    subjectsHtml += '<p style="font-size:13px; color:#0077b6; margin-top:4px;"><strong>Reply-To:</strong> ' + data.reply_to + '</p>';
+                    document.getElementById('templatePreviewSubject').innerHTML = subjectsHtml;
+                })
+                .catch(() => {
+                    document.getElementById('templatePreviewHtml').innerHTML = '<div style="color:#dc3545; text-align:center; padding:40px;">Failed to load template.</div>';
+                });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load template on page load
+        loadOfferTemplate();
+        // ---- Per-Script Send Control ----
+        function toggleScriptSend(script) {
+            const paused = {
+                bot: {{ 'true' if bot_paused else 'false' }},
+                campaigns: {{ 'true' if campaigns_paused else 'false' }},
+                offers: {{ 'true' if offers_paused else 'false' }},
+            };
+            const action = paused[script] ? 'resume' : 'pause';
+            const btnId = script + 'ToggleBtn';
+            const btn = document.getElementById(btnId);
+            if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+            fetch('/api/send-control/' + script + '/' + action, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) { alert(data.error); if (btn) { btn.disabled = false; } }
+                    else { location.reload(); }
+                })
+                .catch(() => { if (btn) { btn.disabled = false; btn.textContent = paused[script] ? 'Resume' : 'Pause'; } });
+        }
+
+        // ---- Global Send Control ----
+        function toggleGlobalSend() {
+            const currentPaused = {{ 'true' if global_send_paused else 'false' }};
+            const action = currentPaused ? 'resume' : 'pause';
+            const btn = document.getElementById('globalSendToggleBtn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+            fetch('/api/send-control/' + action, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) { alert(data.error); if (btn) { btn.disabled = false; btn.textContent = currentPaused ? 'Resume All Sending' : 'Pause All Sending'; } }
+                    else { location.reload(); }
+                })
+                .catch(() => { if (btn) { btn.disabled = false; btn.textContent = currentPaused ? 'Resume All Sending' : 'Pause All Sending'; } });
+        }
+
+        // ---- Emergency Terminate ----
+        function terminateAll() {
+            if (!confirm('EMERGENCY STOP: This will pause ALL sending (bot, campaigns, offers) and stop any active campaigns. Resume manually after. Continue?')) return;
+            const btn = document.getElementById('terminateBtn');
+            if (btn) { btn.disabled = true; btn.textContent = 'Terminating...'; }
+            fetch('/api/terminate-all', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) { alert(data.error); if (btn) { btn.disabled = false; btn.textContent = 'TERMINATE ALL'; } }
+                    else { location.reload(); }
+                })
+                .catch(() => { if (btn) { btn.disabled = false; btn.textContent = 'TERMINATE ALL'; } });
+        }
+
+        // ---- Offer Letter Campaign ----
+        const OFFER_CAMPAIGN_ID = {{ offer_active_campaign.id if offer_active_campaign else 'null' }};
+        let offerPollInterval = null;
+
+        function updateOfferEligibleCount() {
+            fetch('/api/offer-letters/eligible-count')
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('offerEligibleBadge');
+                    if (badge) badge.textContent = data.eligible + ' eligible applicants';
+                })
+                .catch(() => {
+                    const badge = document.getElementById('offerEligibleBadge');
+                    if (badge) badge.textContent = 'Unable to load count';
+                });
+        }
+
+        function startOfferCampaign(e) {
+            e.preventDefault();
+            const btn = document.getElementById('startOfferBtn');
+            btn.disabled = true;
+            btn.textContent = 'Starting...';
+            const formData = new FormData(e.target);
+            fetch('/offer-letters/start', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = '📄 Send Offer Letters'; }
+                else { location.reload(); }
+            })
+            .catch(() => { btn.disabled = false; btn.textContent = '📄 Send Offer Letters'; });
+        }
+
+        function pauseOfferCampaign(id) {
+            fetch('/offer-letters/' + id + '/pause', { method: 'POST' })
+            .then(r => r.json())
+            .then(() => location.reload());
+        }
+
+        function resumeOfferCampaign(id) {
+            fetch('/offer-letters/' + id + '/resume', { method: 'POST' })
+            .then(r => r.json())
+            .then(() => location.reload());
+        }
+
+        function stopOfferCampaign(id) {
+            if (!confirm('Stop this campaign? No more emails will be sent.')) return;
+            fetch('/offer-letters/' + id + '/pause', { method: 'POST' })
+            .then(() => location.reload());
+        }
+
+        function pollOfferCampaignStatus() {
+            if (OFFER_CAMPAIGN_ID === null) return;
+            fetch('/offer-letters/' + OFFER_CAMPAIGN_ID + '/status')
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) return;
+                const c = data.campaign;
+                const total = c.total_queued || 1;
+                const sent = c.total_sent || 0;
+                const failed = c.total_failed || 0;
+                const pct = Math.min(100, Math.round((sent + failed) / total * 100));
+                const fill = document.getElementById('offerProgressFill');
+                const label = document.getElementById('offerProgressLabel');
+                if (fill) fill.style.width = pct + '%';
+                if (label) label.textContent = (sent + failed) + ' / ' + total + ' sent (' + pct + '%)';
+
+                const sSent = document.getElementById('offerStatSent');
+                const sFailed = document.getElementById('offerStatFailed');
+                const sLast = document.getElementById('offerStatLastSender');
+                if (sSent) sSent.textContent = sent;
+                if (sFailed) sFailed.textContent = failed;
+                if (sLast) sLast.textContent = c.last_sender_email || '—';
+
+                if (data.senders) {
+                    const grid = document.getElementById('offerSenderGrid');
+                    if (grid && data.senders.length) {
+                        let html = '';
+                        data.senders.forEach(s => {
+                            const pctS = Math.round((s.sent / s.limit) * 100);
+                            html += '<div class="sender-card"><div class="sender-email">' + s.email + '</div>';
+                            html += '<div class="sender-name">' + s.name + '</div>';
+                            html += '<div class="sender-mini-bar"><div class="sender-mini-fill" style="width:' + pctS + '%;"></div></div>';
+                            html += '<div class="sender-meta">' + s.sent + ' / ' + s.limit + ' sent &mdash; ' + s.remaining + ' remaining</div></div>';
+                        });
+                        grid.innerHTML = html;
+                    }
+                }
+
+                if (data.recent_sends) {
+                    const tbody = document.querySelector('#offerRecipientTable tbody');
+                    if (tbody) {
+                        let rows = '';
+                        data.recent_sends.forEach((s, i) => {
+                            const statusBadge = s.status === 'sent'
+                                ? '<span style="color:#28a745; font-weight:bold;">✓ Sent</span>'
+                                : s.status === 'failed'
+                                    ? '<span style="color:#dc3545; font-weight:bold;">✗ Failed</span>'
+                                    : '<span style="color:#888;">' + s.status + '</span>';
+                            const deliveryBadge = s.delivery_status === 'delivered'
+                                ? '<span style="color:#28a745;">Delivered</span>'
+                                : s.delivery_status === 'bounced'
+                                    ? '<span style="color:#dc3545;">Bounced</span>'
+                                    : s.delivery_status === 'opened'
+                                        ? '<span style="color:#17a2b8;">Opened</span>'
+                                        : s.delivery_status
+                                            ? '<span style="color:#888;">' + s.delivery_status + '</span>'
+                                            : '<span style="color:#ccc;">—</span>';
+                            rows += '<tr>';
+                            rows += '<td>' + (i + 1) + '</td>';
+                            rows += '<td>' + s.to_email + '</td>';
+                            rows += '<td>' + statusBadge + '</td>';
+                            rows += '<td>' + deliveryBadge + '</td>';
+                            rows += '<td>' + (s.sent_at || '—') + '</td>';
+                            rows += '<td style="color:#dc3545; max-width: 200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (s.error_message || '') + '</td>';
+                            rows += '</tr>';
+                        });
+                        tbody.innerHTML = rows || '<tr><td colspan="6" style="text-align:center; color:#888;">No sends yet</td></tr>';
+                    }
+                }
+
+                const statusLabel = document.getElementById('offerActiveStatusLabel');
+                if (statusLabel) statusLabel.textContent = c.status;
+
+                if (c.status === 'completed' || c.status === 'stopped') {
+                    clearInterval(offerPollInterval);
+                }
+            });
+        }
+
+        {% if offer_active_campaign %}
+        updateOfferEligibleCount();
+        pollOfferCampaignStatus();
+        offerPollInterval = setInterval(pollOfferCampaignStatus, 10000);
+        {% else %}
+        updateOfferEligibleCount();
+        {% endif %}
+
+        // ---- Test Email ----
+        function sendTestEmail() {
+            const btn = document.getElementById('sendTestEmailBtn');
+            const resultDiv = document.getElementById('testEmailResult');
+            const template = document.getElementById('testTemplateSelect').value;
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            resultDiv.innerHTML = '<p style="color: #666; font-size: 13px;">Sending test email, please wait...</p>';
+
+            fetch('/api/send-test-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ template: template })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    resultDiv.innerHTML = '<p style="color: #dc3545; font-size: 14px; padding: 8px 12px; background: #f8d7da; border-radius: 4px;"><strong>Failed:</strong> ' + escapeHtml(data.error) + '</p>';
+                } else {
+                    resultDiv.innerHTML = '<p style="color: #155724; font-size: 14px; padding: 8px 12px; background: #d4edda; border-radius: 4px;"><strong>Sent!</strong> ' + escapeHtml(data.subject) + '<br><span style="font-size: 12px; color: #666;">To: ' + escapeHtml(data.recipient) + ' &nbsp;|&nbsp; From: ' + escapeHtml(data.sender) + '</span></p>';
+                }
+            })
+            .catch(() => {
+                resultDiv.innerHTML = '<p style="color: #dc3545; font-size: 14px; padding: 8px 12px; background: #f8d7da; border-radius: 4px;"><strong>Error:</strong> Could not reach the server.</p>';
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '&#x2709; Send Test Email';
+            });
+        }
+    </script>
+    <script>
+
+        function updateEligibleCount() {
+            fetch('/api/campaign/eligible-count')
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('eligibleBadge');
+                    if (badge) badge.textContent = data.eligible + ' eligible applicants';
+                })
+                .catch(() => {
+                    const badge = document.getElementById('eligibleBadge');
+                    if (badge) badge.textContent = 'Unable to load count';
+                });
+        }
+
+        function startCampaign(e) {
+            e.preventDefault();
+            const btn = document.getElementById('startCampaignBtn');
+            btn.disabled = true;
+            btn.textContent = 'Starting...';
+            const formData = new FormData(e.target);
+            fetch('/campaign/start', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = '✉️ Start Campaign'; }
+                else { location.reload(); }
+            })
+            .catch(() => { btn.disabled = false; btn.textContent = '✉️ Start Campaign'; });
+        }
+
+        function pauseCampaign(id) {
+            fetch('/campaign/' + id + '/pause', { method: 'POST' })
+            .then(r => r.json())
+            .then(() => location.reload());
+        }
+
+        function resumeCampaign(id) {
+            fetch('/campaign/' + id + '/resume', { method: 'POST' })
+            .then(r => r.json())
+            .then(() => location.reload());
+        }
+
+        function stopCampaign(id) {
+            if (!confirm('Stop this campaign? No more emails will be sent.')) return;
+            fetch('/campaign/' + id + '/pause', { method: 'POST' })
+            .then(() => location.reload());
+        }
+
+        // ---- Reminder Campaign ----
+        const CAMPAIGN_ID = {{ active_campaign.id if active_campaign else 'null' }};
+        let pollInterval = null;
+
+        function pollCampaignStatus() {
+            if (CAMPAIGN_ID === null) return;
+            fetch('/campaign/' + CAMPAIGN_ID + '/status')
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) return;
+                const c = data.campaign;
+                const stats = data.stats;
+
+                const total = c.total_queued || 1;
+                const sent = stats.total_sent || 0;
+                const failed = stats.total_failed || 0;
+                const pct = Math.min(100, Math.round((sent + failed) / total * 100));
+                const fill = document.getElementById('progressFill');
+                const label = document.getElementById('progressLabel');
+                if (fill) fill.style.width = pct + '%';
+                if (label) label.textContent = (sent + failed) + ' / ' + total + ' sent (' + pct + '%)';
+
+                const sSent = document.getElementById('statSent');
+                const sFailed = document.getElementById('statFailed');
+                const sLast = document.getElementById('statLastSender');
+                if (sSent) sSent.textContent = sent;
+                if (sFailed) sFailed.textContent = failed;
+                if (sLast) sLast.textContent = c.last_sender_email || '—';
+
+                if (data.senders) {
+                    const grid = document.getElementById('senderGrid');
+                    if (grid && data.senders.length) {
+                        let html = '';
+                        data.senders.forEach(s => {
+                            const pctS = Math.round((s.sent / s.limit) * 100);
+                            html += '<div class="sender-card"><div class="sender-email">' + s.email + '</div>';
+                            html += '<div class="sender-name">' + s.name + '</div>';
+                            html += '<div class="sender-mini-bar"><div class="sender-mini-fill" style="width:' + pctS + '%;"></div></div>';
+                            html += '<div class="sender-meta">' + s.sent + ' / ' + s.limit + ' sent &mdash; ' + s.remaining + ' remaining</div></div>';
+                        });
+                        grid.innerHTML = html;
+                    }
+                }
+
+                const statusLabel = document.getElementById('activeStatusLabel');
+                if (statusLabel) statusLabel.textContent = c.status;
+
+                if (c.status === 'completed' || c.status === 'stopped') {
+                    clearInterval(pollInterval);
+                }
+            });
+        }
+
+    </script>
+
+    <script>
+        setTimeout(function() {
+            window.location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Log — Gayatri Education Project</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #004d66, #0077b6);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar h1 { font-size: 22px; font-weight: 600; }
+        .navbar .nav-links a {
+            color: white; text-decoration: none; margin-left: 20px;
+            font-size: 14px; opacity: 0.9; transition: opacity 0.2s;
+        }
+        .navbar .nav-links a:hover { opacity: 1; text-decoration: underline; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px; }
+        .page-header { margin-bottom: 1.5rem; }
+        .page-header h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+        .subtitle { color: #6b7280; font-size: 0.875rem; margin: 0; }
+
+        .log-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .summary-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .summary-card .card-value {
+            display: block;
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .summary-card .card-label {
+            display: block;
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+        .summary-card.sent .card-value { color: #16a34a; }
+        .summary-card.bounced .card-value { color: #dc2626; }
+        .summary-card.failed .card-value { color: #ea580c; }
+        .summary-card.pending .card-value { color: #ca8a04; }
+        .summary-card.rate .card-value { color: #dc2626; }
+
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filters input,
+        .filters select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            min-width: 180px;
+        }
+        .btn-bounce {
+            padding: 0.5rem 1rem;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        .btn-bounce:hover { background: #b91c1c; }
+
+        .log-table-wrap { overflow-x: auto; }
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        .log-table th,
+        .log-table td {
+            padding: 0.6rem 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+            white-space: nowrap;
+        }
+        .log-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #6b7280;
+            position: sticky;
+            top: 0;
+        }
+        .log-table tbody tr:hover { background: #f9fafb; }
+        .log-table tbody tr.bounced-row { background: #fef2f2; }
+        .log-table tbody tr.failed-row { background: #fff7ed; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-sent { background: #dcfce7; color: #166534; }
+        .badge-failed { background: #fed7aa; color: #9a3412; }
+        .badge-queued { background: #fef9c3; color: #854d0e; }
+        .badge-bounced { background: #fee2e2; color: #991b1b; }
+        .badge-delivered { background: #dcfce7; color: #166534; }
+        .badge-pending { background: #e0e7ff; color: #3730a3; }
+
+        .bounce-info {
+            color: #dc2626;
+            font-size: 0.8rem;
+        }
+        .bounce-info .bounce-type {
+            font-weight: 600;
+        }
+        .bounce-info .bounce-reason {
+            color: #6b7280;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #9ca3af;
+        }
+        .error-text {
+            color: #dc2626;
+            font-size: 0.8rem;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🎓 Gayatri Education Project — Email Log</h1>
+        <div class="nav-links">
+            <a href="/">Dashboard</a>
+            <a href="/applicants">Applicants</a>
+            <a href="/skills">Skills</a>
+            <a href="/ctas">CTAs</a>
+            <a href="/settings">Settings</a>
+        </div>
+    </div>
+
+    <div class="container">
+      <div class="page-header">
+        <h1>Email Delivery Log</h1>
+        <p class="subtitle">Track every sent email, bounce, and delivery failure</p>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="log-summary">
+        <div class="summary-card">
+          <span class="card-value">{{ stats.total }}</span>
+          <span class="card-label">Total Emails</span>
+        </div>
+        <div class="summary-card sent">
+          <span class="card-value">{{ stats.sent }}</span>
+          <span class="card-label">Delivered</span>
+        </div>
+        <div class="summary-card bounced">
+          <span class="card-value">{{ stats.bounced }}</span>
+          <span class="card-label">Bounced</span>
+        </div>
+        <div class="summary-card failed">
+          <span class="card-value">{{ stats.failed }}</span>
+          <span class="card-label">Failed</span>
+        </div>
+        <div class="summary-card pending">
+          <span class="card-value">{{ stats.pending }}</span>
+          <span class="card-label">Pending</span>
+        </div>
+        <div class="summary-card rate">
+          <span class="card-value">{{ "%.1f" | format(stats.bounce_rate_pct) }}%</span>
+          <span class="card-label">Bounce Rate</span>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters">
+        <input type="text" id="filterEmail" placeholder="Filter by email..." oninput="applyFilters()">
+        <select id="filterStatus" onchange="applyFilters()">
+          <option value="">All statuses</option>
+          <option value="sent">Sent</option>
+          <option value="failed">Failed</option>
+          <option value="bounced">Bounced</option>
+        </select>
+        <select id="filterPhase" onchange="applyFilters()">
+          <option value="">All phases</option>
+          <option value="phase1">Phase 1</option>
+          <option value="phase2">Phase 2</option>
+          <option value="reminder">Reminder</option>
+        </select>
+        <button class="btn-bounce" onclick="loadBouncesOnly()">Show Bounces Only</button>
+      </div>
+
+      <!-- Log table -->
+      <div class="log-table-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>To</th>
+              <th>Subject</th>
+              <th>Phase</th>
+              <th>From</th>
+              <th>Status</th>
+              <th>Delivery</th>
+              <th>Bounce Info</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody">
+            <tr><td colspan="9" class="loading">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+    function applyFilters() {
+      const email = document.getElementById('filterEmail').value.toLowerCase();
+      const status = document.getElementById('filterStatus').value;
+      const phase = document.getElementById('filterPhase').value;
+
+      let url = '/api/email-log?limit=200';
+      if (email) url += '&to_email=' + encodeURIComponent(email);
+      if (status) url += '&status=' + encodeURIComponent(status);
+      if (phase) url += '&phase=' + encodeURIComponent(phase);
+
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          const tbody = document.getElementById('logTableBody');
+          if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="loading">No entries found</td></tr>';
+            return;
+          }
+
+          const statusClass = {
+            sent: 'badge-sent',
+            failed: 'badge-failed',
+            queued: 'badge-queued',
+          };
+
+          const deliveryClass = {
+            delivered: 'badge-delivered',
+            bounced: 'badge-bounced',
+            pending: 'badge-pending',
+          };
+
+          tbody.innerHTML = data.map(row => {
+            const rowClass = row.delivery_status === 'bounced' ? 'bounced-row' : (row.status === 'failed' ? 'failed-row' : '');
+            const bounceHTML = row.delivery_status === 'bounced'
+              ? `<div class="bounce-info">
+                   <span class="bounce-type">${row.bounce_type || 'bounce'}</span>
+                   <span class="bounce-reason" title="${(row.bounce_reason || '').replace(/"/g, '&quot;')}">${row.bounce_reason || 'Unknown'}</span>
+                 </div>`
+              : '<span class="badge badge-pending">—</span>';
+
+            return `<tr class="${rowClass}">
+              <td>${row.sent_at || row.created_at || '—'}</td>
+              <td title="${row.to_email || ''}">${row.to_email || '—'}</td>
+              <td title="${(row.subject || '').replace(/"/g, '&quot;')}">${(row.subject || '—').substring(0, 40)}</td>
+              <td>${row.phase || '—'}</td>
+              <td>${row.from_email || '—'}</td>
+              <td><span class="badge ${statusClass[row.status] || ''}">${row.status || '—'}</span></td>
+              <td><span class="badge ${deliveryClass[row.delivery_status] || 'badge-pending'}">${row.delivery_status || 'pending'}</span></td>
+              <td>${bounceHTML}</td>
+              <td class="error-text" title="${(row.error_message || '').replace(/"/g, '&quot;')}">${row.error_message || ''}</td>
+            </tr>`;
+          }).join('');
+        })
+        .catch(() => {
+          document.getElementById('logTableBody').innerHTML = '<tr><td colspan="9" class="loading">Error loading data</td></tr>';
+        });
+    }
+
+    function loadBouncesOnly() {
+      const url = '/api/email-log?limit=200&bounce_only=1';
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          const tbody = document.getElementById('logTableBody');
+          if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="loading">No bounces found</td></tr>';
+            return;
+          }
+          tbody.innerHTML = data.map(row => {
+            return `<tr class="bounced-row">
+              <td>${row.sent_at || row.created_at || '—'}</td>
+              <td title="${row.to_email || ''}">${row.to_email || '—'}</td>
+              <td title="${(row.subject || '').replace(/"/g, '&quot;')}">${(row.subject || '—').substring(0, 40)}</td>
+              <td>${row.phase || '—'}</td>
+              <td>${row.from_email || '—'}</td>
+              <td><span class="badge badge-sent">sent</span></td>
+              <td><span class="badge badge-bounced">bounced</span></td>
+              <td><div class="bounce-info"><span class="bounce-type">${row.bounce_type || 'bounce'}</span>
+              <span class="bounce-reason" title="${(row.bounce_reason || '').replace(/"/g, '&quot;')}">${row.bounce_reason || 'Unknown'}</span></div></td>
+              <td class="error-text">${row.error_message || ''}</td>
+            </tr>`;
+          }).join('');
+        })
+        .catch(() => {
+          document.getElementById('logTableBody').innerHTML = '<tr><td colspan="9" class="loading">Error loading data</td></tr>';
+        });
+    }
+
+    // Initial load
+    document.addEventListener('DOMContentLoaded', applyFilters);
+
+    // Auto-refresh every 30s
+    setInterval(applyFilters, 30000);
+    </script>
+</body>
+</html>

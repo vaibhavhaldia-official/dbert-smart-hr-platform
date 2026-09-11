@@ -1,0 +1,42 @@
+# Virtual Environments
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+logs/
+
+# Databases
+*.db
+*.sqlite3
+gayatri.db
+
+# Secrets & Configuration
+service_account.json
+.env
+
+# Application State & Output
+.bot_paused
+.campaigns_paused
+uploads/
+generated_offers/
+
+# Documents and Media
+*.docx
+QrCode.jpeg
+*.md
+!README.md
+
+# Scripts and Executables
+*.bat
+*.vbs
+
+# Data Files
+*.csv
+
+# OS generated files
+.DS_Store
+Thumbs.db
