@@ -1,27 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Applicant Detail — Gayatri Education Project</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5; color: #333; min-height: 100vh;
-        }
-        .navbar {
-            background: linear-gradient(135deg, #004d66, #0077b6);
-            color: white; padding: 20px 30px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .navbar h1 { font-size: 22px; font-weight: 600; }
-        .navbar .nav-links a {
-            color: white; text-decoration: none; margin-left: 20px; font-size: 14px; opacity: 0.9;
-        }
-        .navbar .nav-links a:hover { opacity: 1; text-decoration: underline; }
-        .container { max-width: 1100px; margin: 0 auto; padding: 30px; }
+{% extends "base.html" %}
+{% block title %}Applicant Detail — Gayatri Education Project{% endblock %}
+
+{% block extra_css %}
+<style>
+
+        
+        
+        
+        
+        
+        
+        
 
         .card {
             background: white; border-radius: 12px; padding: 24px;
@@ -72,18 +61,14 @@
         .alert-success { background: #d4edda; color: #155724; }
         .alert-warning { background: #fff3cd; color: #856404; }
         .alert-error { background: #f8d7da; color: #721c24; }
-    </style>
-</head>
-<body>
-    <div class="navbar">
-        <h1>📋 Applicant Detail</h1>
-        <div class="nav-links">
-            <a href="/">Dashboard</a>
-            <a href="/applicants">← Back to Applicants</a>
-            <a href="/skills">Skills</a>
-            <a href="/ctas">CTAs</a>
-        </div>
-    </div>
+    
+        .container { max-width: 100%; margin: 0; padding: 0; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+</div>
 
     <div class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -242,5 +227,4 @@
             {% endif %}
         </div>
     </div>
-</body>
-</html>
+{% endblock %}

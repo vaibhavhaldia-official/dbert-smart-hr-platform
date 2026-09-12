@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}
+Gayatri Education Project
+{% endblock %}
+
+
+{% block content %}
+
+<div class="landing-page">
+
+    <div class="landing-content">
+
+
+        <div class="landing-logo">
+            🎓
+        </div>
+
+
+        <h1 class="landing-title">
+            Gayatri Education
+            <br>
+            Project
+        </h1>
+
+
+        <p class="landing-subtitle">
+            Applicant Management System
+        </p>
+
+
+        <div class="landing-actions">
+
+
+            <!-- IMPORT CSV -->
+
+            <form
+                method="POST"
+                action="/import/csv"
+                enctype="multipart/form-data">
+
+                <input
+                    type="file"
+                    name="file"
+                    id="landingCsv"
+                    class="landing-file"
+                    accept=".csv"
+                    onchange="this.form.submit()">
+
+                <label
+                    for="landingCsv"
+                    class="landing-action primary"
+                    style="
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                    ">
+
+                    📥 Import CSV
+
+                </label>
+
+            </form>
+
+
+            <!-- DOWNLOAD MASTER CSV -->
+
+            <a
+                href="/download/master"
+                class="landing-action"
+                style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    text-decoration:none;
+                ">
+
+                📤 Download Master CSV
+
+            </a>
+
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

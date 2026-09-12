@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% block title %}
+        Gayatri Education Project
+        {% endblock %}
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #eef2f7;
+            color: #172033;
+        }
+
+
+        /* =====================================================
+           HEADER
+           ===================================================== */
+
+        .app-header {
+
+            height: 72px;
+
+            background: #ffffff;
+
+            border-bottom:
+                1px solid #e5eaf1;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 24px;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 1000;
+        }
+
+
+        .brand {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+        }
+
+
+        .brand-icon {
+
+            width: 40px;
+
+            height: 40px;
+
+            border-radius: 12px;
+
+            background: #eef2ff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 21px;
+        }
+
+
+        .brand-title {
+
+            font-size: 17px;
+
+            font-weight: 800;
+
+            color: #172033;
+        }
+
+
+        .brand-subtitle {
+
+            font-size: 11px;
+
+            color: #8a94a6;
+
+            margin-top: 2px;
+        }
+
+
+        .admin-status {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+            padding: 8px 13px;
+
+            border-radius: 20px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e8edf5;
+
+            font-size: 12px;
+
+            font-weight: 700;
+        }
+
+
+        .admin-dot {
+
+            width: 8px;
+
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: #22c55e;
+        }
+
+
+        /* =====================================================
+           APP LAYOUT
+           ===================================================== */
+
+        .app-layout {
+
+            display: flex;
+
+            min-height:
+                calc(100vh - 72px);
+        }
+
+
+        /* =====================================================
+           SIDEBAR
+           ===================================================== */
+
+        .sidebar {
+
+            width: 68px;
+
+            flex-shrink: 0;
+
+            background: #ffffff;
+
+            border-right:
+                1px solid #e5eaf1;
+
+            position: fixed;
+
+            left: 0;
+
+            top: 72px;
+
+            height:
+                calc(100vh - 72px);
+
+            overflow: hidden;
+
+            transition:
+                width .25s ease;
+
+            z-index: 900;
+        }
+
+
+        .sidebar.open {
+
+            width: 235px;
+
+            box-shadow:
+                8px 0 25px
+                rgba(30,41,59,.08);
+        }
+
+
+        /* =====================================================
+           THREE DOT BUTTON
+           ===================================================== */
+
+        .sidebar-toggle {
+
+            width: 44px;
+
+            height: 44px;
+
+            margin: 12px auto 20px;
+
+            border: 1px solid #e5eaf1;
+
+            background: #f8fafc;
+
+            border-radius: 12px;
+
+            font-size: 24px;
+
+            color: #475467;
+
+            cursor: pointer;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            transition: .2s ease;
+        }
+
+
+        .sidebar-toggle:hover {
+
+            background: #eef2ff;
+
+            color: #4338ca;
+        }
+
+
+        .sidebar.open
+        .sidebar-toggle {
+
+            margin-left: 14px;
+        }
+
+
+        /* =====================================================
+           NAV
+           ===================================================== */
+
+        .sidebar-nav {
+
+            padding: 0 10px;
+        }
+
+
+        .nav-link {
+
+            height: 48px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 13px;
+
+            padding: 0 13px;
+
+            margin-bottom: 7px;
+
+            border-radius: 12px;
+
+            text-decoration: none;
+
+            color: #667085;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            white-space: nowrap;
+
+            transition: .2s ease;
+        }
+
+
+        .nav-link:hover {
+
+            background: #f5f7ff;
+
+            color: #4338ca;
+        }
+
+
+        .nav-link.active {
+
+            background: #eef2ff;
+
+            color: #4338ca;
+        }
+
+
+        .nav-icon {
+
+            width: 30px;
+
+            min-width: 30px;
+
+            height: 30px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 17px;
+        }
+
+
+        .nav-label {
+
+            opacity: 0;
+
+            transform:
+                translateX(-5px);
+
+            transition: .2s ease;
+        }
+
+
+        .sidebar.open
+        .nav-label {
+
+            opacity: 1;
+
+            transform:
+                translateX(0);
+        }
+
+
+        /* =====================================================
+           MAIN
+           ===================================================== */
+
+        .app-main {
+
+            width: 100%;
+
+            min-width: 0;
+
+            padding: 28px;
+
+            margin-left: 68px;
+        }
+
+
+        .page-container {
+
+            width: 100%;
+
+            max-width: 1600px;
+
+            margin: 0 auto;
+        }
+
+
+        /* =====================================================
+           LANDING PAGE
+           ===================================================== */
+
+        .landing-page {
+
+            min-height:
+                calc(100vh - 128px);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            text-align: center;
+        }
+
+
+        .landing-content {
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            width: 100%;
+
+            max-width: 600px;
+
+            padding: 40px;
+        }
+
+
+        .landing-logo {
+
+            width: 90px;
+
+            height: 90px;
+
+            border-radius: 25px;
+
+            background: #ffffff;
+
+            border:
+                1px solid #e5eaf1;
+
+            box-shadow:
+                0 10px 30px
+                rgba(30,41,59,.08);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 46px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .landing-title {
+
+            margin: 0;
+
+            font-size: 42px;
+
+            line-height: 1.1;
+
+            font-weight: 850;
+
+            letter-spacing: -.8px;
+
+            color: #172033;
+        }
+
+
+        .landing-subtitle {
+
+            margin-top: 12px;
+
+            margin-bottom: 35px;
+
+            color: #718096;
+
+            font-size: 15px;
+        }
+
+
+        .landing-actions {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 14px;
+
+            width: 100%;
+
+            max-width: 330px;
+        }
+
+
+        .landing-action {
+
+            width: 100%;
+
+            min-height: 55px;
+
+            border-radius: 13px;
+
+            border: 1px solid #dce2eb;
+
+            background: #ffffff;
+
+            color: #344054;
+
+            font-size: 14px;
+
+            font-weight: 750;
+
+            cursor: pointer;
+
+            transition: .2s ease;
+        }
+
+
+        .landing-action:hover {
+
+            transform:
+                translateY(-2px);
+
+            border-color: #818cf8;
+
+            color: #4338ca;
+
+            box-shadow:
+                0 8px 22px
+                rgba(30,41,59,.08);
+        }
+
+
+        .landing-action.primary {
+
+            background: #4f46e5;
+
+            border-color: #4f46e5;
+
+            color: #ffffff;
+        }
+
+
+        .landing-action.primary:hover {
+
+            background: #4338ca;
+
+            color: #ffffff;
+        }
+
+
+        .landing-file {
+
+            display: none;
+        }
+
+
+        /* =====================================================
+           COMMON
+           ===================================================== */
+
+        .card {
+
+            background: #ffffff;
+
+            border:
+                1px solid #e5eaf1;
+
+            border-radius: 16px;
+
+            padding: 22px;
+
+            box-shadow:
+                0 4px 18px
+                rgba(30,41,59,.045);
+        }
+
+
+        .card.blue {
+
+            border-top:
+                3px solid #4f46e5;
+        }
+
+
+        .btn {
+
+            border: none;
+
+            border-radius: 10px;
+
+            padding: 10px 16px;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+        }
+
+
+        .btn-primary {
+
+            background: #4f46e5;
+
+            color: #ffffff;
+        }
+
+
+        .btn-success {
+
+            background: #dcfce7;
+
+            color: #15803d;
+        }
+
+
+        .btn-danger {
+
+            background: #fee2e2;
+
+            color: #b91c1c;
+        }
+
+
+        .btn-warning {
+
+            background: #fef3c7;
+
+            color: #a16207;
+        }
+
+
+        .btn-secondary {
+
+            background: #eef2ff;
+
+            color: #4338ca;
+        }
+
+
+        input,
+        select,
+        textarea {
+
+            font-family: inherit;
+
+            border:
+                1px solid #dce2eb;
+
+            border-radius: 10px;
+
+            padding: 10px 12px;
+
+            background: #ffffff;
+
+            outline: none;
+        }
+
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+
+            border-color: #818cf8;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(99,102,241,.1);
+        }
+
+
+        table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+        }
+
+
+        th {
+
+            background: #f8fafc;
+
+            color: #718096;
+
+            font-size: 11px;
+
+            text-transform: uppercase;
+
+            text-align: left;
+
+            padding: 12px;
+        }
+
+
+        td {
+
+            padding: 12px;
+
+            border-bottom:
+                1px solid #edf1f6;
+
+            font-size: 13px;
+        }
+
+
+        .badge {
+
+            display: inline-flex;
+
+            padding: 5px 9px;
+
+            border-radius: 20px;
+
+            background: #f1f5f9;
+
+            color: #475467;
+
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           MOBILE
+           ===================================================== */
+
+        @media (max-width: 700px) {
+
+            .brand-subtitle {
+
+                display: none;
+            }
+
+
+            .admin-status {
+
+                display: none;
+            }
+
+
+            .app-main {
+
+                padding: 18px;
+
+                margin-left: 68px;
+            }
+
+
+            .landing-title {
+
+                font-size: 32px;
+            }
+
+
+            .landing-content {
+
+                padding: 20px;
+            }
+
+        }
+
+    </style>
+
+
+    <!-- =====================================================
+         PAGE-SPECIFIC CSS
+         This allows applicants.html, skills.html, etc.
+         to provide their own styling.
+         ===================================================== -->
+
+    {% block extra_css %}
+    {% endblock %}
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     HEADER
+     ========================================================= -->
+
+<header class="app-header">
+
+    <div class="brand">
+
+        <div class="brand-icon">
+            🎓
+        </div>
+
+        <div>
+
+            <div class="brand-title">
+                Gayatri Education Project
+            </div>
+
+            <div class="brand-subtitle">
+                Administration Portal
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="admin-status">
+
+        <span class="admin-dot"></span>
+
+        Admin Panel
+
+    </div>
+
+</header>
+
+
+
+<!-- =========================================================
+     SIDEBAR
+     ========================================================= -->
+
+<aside
+    id="sidebar"
+    class="sidebar">
+
+    <button
+        type="button"
+        class="sidebar-toggle"
+        onclick="toggleSidebar()">
+
+        ⋮
+
+    </button>
+
+
+    <nav class="sidebar-nav">
+
+
+        <a
+            href="/dashboard"
+            class="nav-link
+            {% if request.path == '/dashboard' %}
+            active
+            {% endif %}">
+
+            <span class="nav-icon">
+                📊
+            </span>
+
+            <span class="nav-label">
+                Dashboard
+            </span>
+
+        </a>
+
+
+        <a
+            href="/applicants"
+            class="nav-link
+            {% if request.path.startswith('/applicants')
+            or request.path.startswith('/applicant/') %}
+            active
+            {% endif %}">
+
+            <span class="nav-icon">
+                👥
+            </span>
+
+            <span class="nav-label">
+                Applicants
+            </span>
+
+        </a>
+
+
+        <a
+            href="/skills"
+            class="nav-link
+            {% if request.path.startswith('/skills') %}
+            active
+            {% endif %}">
+
+            <span class="nav-icon">
+                🧠
+            </span>
+
+            <span class="nav-label">
+                Skills
+            </span>
+
+        </a>
+
+
+        <a
+            href="/ctas"
+            class="nav-link
+            {% if request.path.startswith('/ctas') %}
+            active
+            {% endif %}">
+
+            <span class="nav-icon">
+                🔗
+            </span>
+
+            <span class="nav-label">
+                CTAs
+            </span>
+
+        </a>
+
+
+        <a
+            href="/settings"
+            class="nav-link
+            {% if request.path.startswith('/settings') %}
+            active
+            {% endif %}">
+
+            <span class="nav-icon">
+                ⚙️
+            </span>
+
+            <span class="nav-label">
+                Settings
+            </span>
+
+        </a>
+
+
+    </nav>
+
+</aside>
+
+
+
+<!-- =========================================================
+     MAIN
+     ========================================================= -->
+
+<main class="app-main">
+
+    <div class="page-container">
+
+        {% block content %}
+        {% endblock %}
+
+    </div>
+
+</main>
+
+
+
+<!-- =========================================================
+     SIDEBAR JS
+     ========================================================= -->
+
+<script>
+
+function toggleSidebar() {
+
+    const sidebar =
+        document.getElementById("sidebar");
+
+    sidebar.classList.toggle("open");
+
+}
+
+</script>
+
+
+{% block scripts %}
+{% endblock %}
+
+</body>
+</html>

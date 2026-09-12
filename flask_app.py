@@ -103,8 +103,12 @@ def format_date(date_str):
 # ============================================================
 # ROUTES
 # ============================================================
-
 @app.route("/")
+def home():
+    return render_template("home.html")
+
+
+@app.route("/dashboard")
 def dashboard():
     stats = get_dashboard_stats()
     stats.update(get_email_log_stats())
