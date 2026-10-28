@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gayatribot"
+version = "1.0.0"
+description = "HR and recruitment automation for the Gayatri Education Project"
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=2.3",
+    "gspread>=6.0",
+    "oauth2client>=4.1",
+    "requests>=2.31",
+    "google-api-python-client>=2.100",
+    "google-auth>=2.20",
+    "python-docx>=1.0",
+    "pypdf>=5.0",
+    "python-dotenv>=1.0",
+    "reportlab>=4.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1"]
+
+[project.scripts]
+gayatri-dashboard = "flask_app:main"
+gayatri-bot = "bot:main"
+gayatri-archive = "archive_offer_logs:main"
+gayatri-doctor = "doctor:main"
+
+[tool.setuptools]
+py-modules = [
+    "config", "bot_config", "database", "pdf_renderer", "smtp_service",
+    "smtp_sender", "offer_letter_sender", "enrollment_filter", "send_control",
+    "flask_app", "bot", "archive_offer_logs", "doctor",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # AC-14: 3 operating systems x floor and current Python = 6 jobs.
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.9", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      # LibreOffice is installed on Linux and macOS so the primary PDF path is
+      # exercised. Windows is deliberately left WITHOUT it, which makes that job
+      # the standing regression test for the reportlab fallback (AC-3).
+      - name: Install LibreOffice (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libreoffice-writer
+
+      - name: Install LibreOffice (macOS)
+        if: runner.os == 'macOS'
+        run: brew install --cask libreoffice || true
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Show preflight diagnostics
+        run: python doctor.py || true
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --cov=. --cov-report=term-missing
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true

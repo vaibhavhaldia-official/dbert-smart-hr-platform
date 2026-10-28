@@ -4,34 +4,125 @@ Handles all local data storage: applicants, skill requirements, processing log,
 email logging, campaign management, CTAs.
 """
 
+import functools
+import logging
+import random
 import sqlite3
 import json
 import os
+import time
 from datetime import datetime
 from contextlib import contextmanager
 
-from bot_config import DATABASE_FILE
+from bot_config import DATABASE_FILE, DB_TIMEOUT_SECONDS, DB_BUSY_TIMEOUT_MS
+
+logger = logging.getLogger("database")
+
+# ============================================================
+# CONNECTION FACTORY — Phase 1 concurrency hardening (AC-11, AC-12)
+#
+# Campaign senders run as daemon threads writing concurrently with
+# interactive dashboard requests, and bot.py may run as a separate process
+# against the same file. Bare sqlite3.connect() with no timeout turns that
+# contention into "database is locked" errors and lost writes.
+#
+#   WAL          — readers do not block the single writer
+#   busy_timeout — a blocked writer waits instead of failing instantly
+#   retry        — backoff for the residual lock window
+# ============================================================
+
+_WAL_CHECKED = False
+
+
+def _configure(conn):
+    """Apply the pragmas that make concurrent access safe."""
+    global _WAL_CHECKED
+    conn.execute("PRAGMA busy_timeout=%d" % DB_BUSY_TIMEOUT_MS)
+    conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA synchronous=NORMAL")
+
+    if not _WAL_CHECKED:
+        # WAL is a persistent property of the database file, so this only has
+        # to take effect once; we read it back because WAL is silently refused
+        # on many network filesystems (SMB/NFS).
+        conn.execute("PRAGMA journal_mode=WAL")
+        mode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+        if str(mode).lower() != "wal":
+            logger.warning(
+                "SQLite journal_mode is %r, not WAL. Concurrent access will be "
+                "less reliable. This usually means the database is on a network "
+                "filesystem; move %s to a local disk.", mode, DATABASE_FILE
+            )
+        _WAL_CHECKED = True
 
 
 def get_connection():
-    """Create and return a database connection with row factory.
+    """Create and return a hardened database connection with row factory.
 
-    All callers MUST call conn.close() after use.
+    All callers MUST call conn.close() after use. Prefer get_db(), which
+    closes for you.
     """
-    conn = sqlite3.connect(DATABASE_FILE)
+    conn = sqlite3.connect(DATABASE_FILE, timeout=DB_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
+    _configure(conn)
     return conn
 
 
 @contextmanager
-def get_db():
-    """Context manager for database connections — ensures conn.close() is always called."""
-    conn = sqlite3.connect(DATABASE_FILE)
+def get_db(write=False):
+    """Context manager for database connections.
+
+    With write=True the transaction starts as BEGIN IMMEDIATE, taking the
+    write lock up front so a conflict surfaces immediately (and retryably)
+    rather than part-way through a transaction, and commits on clean exit /
+    rolls back on exception.
+    """
+    conn = sqlite3.connect(DATABASE_FILE, timeout=DB_TIMEOUT_SECONDS)
     conn.row_factory = sqlite3.Row
+    _configure(conn)
     try:
+        if write:
+            conn.execute("BEGIN IMMEDIATE")
         yield conn
+        if write:
+            conn.commit()
+    except Exception:
+        if write:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
     finally:
         conn.close()
+
+
+def retry_on_locked(attempts=5, base=0.1):
+    """Decorator: retry a write on 'database is locked' with backoff + jitter.
+
+    The busy_timeout handles most contention inside SQLite itself; this covers
+    the residual window and makes lock failures non-fatal for campaign loops.
+    """
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            delay = base
+            last = None
+            for attempt in range(attempts):
+                try:
+                    return fn(*args, **kwargs)
+                except sqlite3.OperationalError as exc:
+                    if "locked" not in str(exc).lower() and "busy" not in str(exc).lower():
+                        raise
+                    last = exc
+                    if attempt == attempts - 1:
+                        break
+                    time.sleep(delay + random.uniform(0, delay))
+                    delay *= 2
+            logger.error("%s failed after %d attempts: %s", fn.__name__, attempts, last)
+            raise last
+        return wrapper
+    return decorator
 
 
 def init_database():
@@ -246,11 +337,18 @@ def seed_default_ctas(cursor):
 # APPLICANT CRUD
 # ============================================================
 
+@retry_on_locked()
 def upsert_applicant(data: dict):
-    """Insert or update an applicant row. Returns the applicant ID."""
-    conn = get_connection()
-    cursor = conn.cursor()
+    """Insert or update an applicant row. Returns the applicant ID.
 
+    Phase 1 (AC-13): a single atomic INSERT ... ON CONFLICT replaces the former
+    SELECT-then-INSERT/UPDATE, which was a genuine race between bot.py and a
+    dashboard CSV import running concurrently.
+
+    Timestamp semantics are preserved exactly: confirmation_sent_at and
+    email_sent_at keep their stored values unless the caller explicitly
+    supplies one, expressed here with COALESCE(excluded.x, applicants.x).
+    """
     fields = {
         "email": data.get("email", ""),
         "name": data.get("name", ""),
@@ -269,37 +367,40 @@ def upsert_applicant(data: dict):
         "confirmation_sent_at": data.get("confirmation_sent_at"),
     }
 
-    cursor.execute("SELECT * FROM applicants WHERE email = ?", (fields["email"],))
-    row = cursor.fetchone()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    columns = list(fields.keys())
+    placeholders = ", ".join("?" * len(columns))
+    col_sql = ", ".join(columns)
 
-    if row:
-        # Preserve existing timestamps if not explicitly provided in data
-        existing = dict(row)
-        if data.get("confirmation_sent_at") is None:
-            fields["confirmation_sent_at"] = existing.get("confirmation_sent_at")
-        if data.get("email_sent_at") is None:
-            fields["email_sent_at"] = existing.get("email_sent_at")
+    # Columns that must never be clobbered with NULL on update.
+    preserved = ("email_sent_at", "confirmation_sent_at")
+    updates = []
+    for col in columns:
+        if col == "email":
+            continue
+        if col in preserved:
+            updates.append(
+                "{c} = COALESCE(excluded.{c}, applicants.{c})".format(c=col)
+            )
+        else:
+            updates.append("{c} = excluded.{c}".format(c=col))
+    updates.append("updated_at = excluded.updated_at")
 
-        applicant_id = row["id"]
-        set_clause = ", ".join(f"{k} = ?" for k in fields.keys())
-        values = list(fields.values()) + [datetime.now().strftime("%Y-%m-%d %H:%M:%S"), applicant_id]
-        cursor.execute(f"""
-            UPDATE applicants SET {set_clause}, updated_at = ? WHERE id = ?
-        """, values)
-    else:
-        columns = ", ".join(fields.keys())
-        placeholders = ", ".join("?" * len(fields))
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        values = list(fields.values()) + [now, now]
-        cursor.execute(f"""
-            INSERT INTO applicants ({columns}, created_at, updated_at)
-            VALUES ({placeholders}, ?, ?)
-        """, values)
+    sql = """
+        INSERT INTO applicants ({cols}, created_at, updated_at)
+        VALUES ({vals}, ?, ?)
+        ON CONFLICT(email) DO UPDATE SET {updates}
+    """.format(cols=col_sql, vals=placeholders, updates=", ".join(updates))
 
-    conn.commit()
-    applicant_id = cursor.lastrowid
-    conn.close()
-    return applicant_id
+    values = list(fields.values()) + [now, now]
+
+    with get_db(write=True) as conn:
+        cursor = conn.cursor()
+        cursor.execute(sql, values)
+        row = cursor.execute(
+            "SELECT id FROM applicants WHERE email = ?", (fields["email"],)
+        ).fetchone()
+        return row["id"] if row else None
 
 
 def get_applicant_by_email(email):
@@ -343,6 +444,7 @@ def get_all_applicants(limit=None, offset=0, filters=None):
     return [dict(r) for r in rows]
 
 
+@retry_on_locked()
 def update_approval_status(email, status):
     """Update approval status for an applicant."""
     conn = get_connection()
@@ -354,6 +456,7 @@ def update_approval_status(email, status):
     conn.close()
 
 
+@retry_on_locked()
 def update_email_sent_at(email, sent_time):
     """Update email_sent_at timestamp for an applicant."""
     conn = get_connection()
@@ -365,6 +468,7 @@ def update_email_sent_at(email, sent_time):
     conn.close()
 
 
+@retry_on_locked()
 def update_confirmation_sent_at(email, sent_time):
     """Update confirmation_sent_at timestamp for an applicant."""
     conn = get_connection()
@@ -376,6 +480,7 @@ def update_confirmation_sent_at(email, sent_time):
     conn.close()
 
 
+@retry_on_locked()
 def update_offer_sent_at(email, sent_time):
     """Update offer_sent_at timestamp for an applicant."""
     conn = get_connection()
@@ -502,6 +607,7 @@ def get_all_skill_requirements():
     return [dict(r) for r in rows]
 
 
+@retry_on_locked()
 def save_skill_requirements(domain, skills_list, description, source="manual", certifications=None):
     """Save or update skill requirements for a domain."""
     conn = get_connection()
@@ -514,6 +620,7 @@ def save_skill_requirements(domain, skills_list, description, source="manual", c
     conn.close()
 
 
+@retry_on_locked()
 def delete_skill_requirement(domain):
     """Delete a skill requirement entry."""
     conn = get_connection()
@@ -527,6 +634,7 @@ def delete_skill_requirement(domain):
 # PROCESSING LOG
 # ============================================================
 
+@retry_on_locked()
 def add_processing_log(applicant_email, action, details=""):
     """Add an entry to the processing log."""
     conn = get_connection()
@@ -615,6 +723,7 @@ def get_cta_by_id(cta_id):
     return dict(row) if row else None
 
 
+@retry_on_locked()
 def create_cta(label, url, icon="", bg_color="#2563eb", text_color="#ffffff", email_type="result", sort_order=0):
     """Create a new CTA."""
     conn = get_connection()
@@ -630,6 +739,7 @@ def create_cta(label, url, icon="", bg_color="#2563eb", text_color="#ffffff", em
     return cta_id
 
 
+@retry_on_locked()
 def update_cta(cta_id, **kwargs):
     """Update a CTA."""
     allowed = {"label", "url", "icon", "bg_color", "text_color", "email_type", "sort_order", "is_active"}
@@ -647,6 +757,7 @@ def update_cta(cta_id, **kwargs):
     return True
 
 
+@retry_on_locked()
 def delete_cta(cta_id):
     """Soft-delete a CTA."""
     conn = get_connection()
@@ -661,6 +772,7 @@ def delete_cta(cta_id):
 # EMAIL CAMPAIGN HELPERS
 # ============================================================
 
+@retry_on_locked()
 def create_campaign(campaign_name, phase="result", target_query=None) -> int:
     """Create a new campaign row."""
     conn = get_connection()
@@ -714,6 +826,7 @@ def get_active_offer_campaign():
     return dict(row) if row else None
 
 
+@retry_on_locked()
 def update_campaign(campaign_id, **kwargs):
     """Update campaign fields."""
     if not kwargs:
@@ -727,6 +840,7 @@ def update_campaign(campaign_id, **kwargs):
     conn.close()
 
 
+@retry_on_locked()
 def increment_campaign_sent(campaign_id):
     """Atomically increment total_sent by 1."""
     conn = get_connection()
@@ -736,6 +850,7 @@ def increment_campaign_sent(campaign_id):
     conn.close()
 
 
+@retry_on_locked()
 def increment_campaign_failed(campaign_id):
     """Atomically increment total_failed by 1."""
     conn = get_connection()
@@ -800,6 +915,7 @@ def get_sender_count(sender_email, hour_bucket) -> int:
     return row["emails_sent"] if row else 0
 
 
+@retry_on_locked()
 def increment_sender_count(sender_email, hour_bucket):
     """Increment the send count for a sender in a given hour."""
     conn = get_connection()
@@ -869,6 +985,7 @@ def get_sender_daily_count(sender_email, day_bucket) -> int:
     return row["emails_sent"] if row else 0
 
 
+@retry_on_locked()
 def increment_sender_daily_count(sender_email, day_bucket):
     """Increment the daily send count for a sender."""
     conn = get_connection()
@@ -886,6 +1003,7 @@ def increment_sender_daily_count(sender_email, day_bucket):
 # EMAIL LOG HELPERS
 # ============================================================
 
+@retry_on_locked()
 def log_email_send(
     to_email: str,
     from_email: str = "",
@@ -927,6 +1045,7 @@ def log_email_send(
     return log_id
 
 
+@retry_on_locked()
 def update_email_log(log_id: int, **kwargs) -> None:
     """Update fields on an existing email_log row."""
     if not kwargs:
@@ -940,6 +1059,7 @@ def update_email_log(log_id: int, **kwargs) -> None:
     conn.close()
 
 
+@retry_on_locked()
 def mark_email_bounced(to_email: str, bounce_type: str, bounce_reason: str,
                         message_id: str = "", smtp_response: str = "") -> int:
     """Mark the most recent email_log entry for to_email as bounced."""

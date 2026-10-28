@@ -1,8 +1,54 @@
 """
-bot_config.py — Configuration for the Gayatri Education Project email bot.
-Edit this file to update settings without changing the main bot logic.
+bot_config.py — Non-secret configuration and email content.
+
+Phase 1 (AC-5): every credential, identifier and deployment-specific value has
+moved to config.py, which reads them from the environment. This module now holds
+only non-secret content — email templates, Google Sheet column names and the
+default skill requirements — and re-exports the rest so that the nine modules
+importing from `bot_config` keep working unchanged.
+
+Nothing in this file may contain a password, API key, or spreadsheet id.
+Set those in .env (see .env.example) or in the production environment.
 """
+
+# Re-export environment-backed configuration (AC-5, AC-7).
+from config import (  # noqa: F401
+    BASE_DIR,
+    GOOGLE_SHEET_NAME,
+    GOOGLE_SHEET_ID,
+    GOOGLE_SHEET_GID,
+    SERVICE_ACCOUNT_KEY,
+    POLL_INTERVAL_SECONDS,
+    SMTP_HOST,
+    SMTP_PORT,
+    SMTP_DISPLAY_NAME,
+    SMTP_MIN_DELAY_SECONDS,
+    SMTP_MAX_DELAY_SECONDS,
+    RATE_LIMIT_PER_SENDER_PER_HOUR,
+    RATE_LIMIT_PER_SENDER_PER_DAY,
+    DEFAULT_REPLY_TO,
+    SENDER_POOL,
+    MAX_RETRIES,
+    RETRY_BACKOFF_BASE,
+    LOG_FILE,
+    DAILY_SUMMARY_RECIPIENT,
+    DATABASE_FILE,
+    DB_TIMEOUT_SECONDS,
+    DB_BUSY_TIMEOUT_MS,
+    FLASK_HOST,
+    FLASK_PORT,
+    FLASK_DEBUG,
+    FLASK_SECRET_KEY,
+    OUTPUT_DIR,
+    UPLOAD_FOLDER,
+    ENROLLMENT_CSV,
+    SELECTED_CSV,
+    SAMPLE_OFFER_DOCX,
+    TEST_EMAIL_RECIPIENT,
+)
+
 from datetime import datetime, timedelta
+
 
 def _next_monday(dt=None):
     dt = dt or datetime.now()
@@ -11,91 +57,8 @@ def _next_monday(dt=None):
         days_ahead = 7
     return (dt + timedelta(days=days_ahead)).strftime("%d %b %Y")
 
+
 HR_INDUCTION_DATE = _next_monday()
-
-# ============================================================
-# GOOGLE SHEET CONFIGURATION
-# ============================================================
-GOOGLE_SHEET_NAME = "Gayatri Education Project Responses"
-GOOGLE_SHEET_ID = "1DsWUtSTSJopcjLbGtjhDJ67BWTz7Uvv3BqRCt_f77Xk"
-GOOGLE_SHEET_GID = "198139462"
-SERVICE_ACCOUNT_KEY = "service_account.json"
-
-# ============================================================
-# POLLING CONFIGURATION
-# ============================================================
-POLL_INTERVAL_SECONDS = 300
-
-# ============================================================
-# SMTP SENDER POOL
-# ============================================================
-SMTP_MIN_DELAY_SECONDS = 50
-SMTP_MAX_DELAY_SECONDS = 70
-RATE_LIMIT_PER_SENDER_PER_HOUR = 25
-RATE_LIMIT_PER_SENDER_PER_DAY = 360
-
-SMTP_HOST = "smtp.gmail.com"
-SMTP_PORT = 587
-SMTP_DISPLAY_NAME = "Gayatri Education HR Team"
-DEFAULT_REPLY_TO = "contactus@gayatrieducation.tech"
-
-# NOTE: fill in each mailbox's Google Workspace App Password below
-# (Workspace admin > Security > App Passwords, requires 2FA enabled on the account).
-# Do not commit real passwords to source control — consider moving these to
-# environment variables (os.environ.get("GAYATRI_SMTP_PASS_CONTACTUS"), etc.)
-# once they're in place.
-SENDER_POOL = [
- 
-    {
-        "email": "hr@gayatrieducation.tech",
-        "password": "lihqfavudwujvaji",
-        "name": "Gayatri Education HR Team",
-        "server": SMTP_HOST,
-        "port": SMTP_PORT,
-        "use_tls": True,
-    },
-    {
-        "email": "prakash@gayatrieducation.tech",
-        "password": "rocaoupawdchbclx",
-        "name": "Gayatri Education HR Team",
-        "server": SMTP_HOST,
-        "port": SMTP_PORT,
-        "use_tls": True,
-    },
-    {
-        "email": "param@gayatrieducation.tech",
-        "password": "yxwgdanbhbdaheiu",
-        "name": "Gayatri Education HR Team",
-        "server": SMTP_HOST,
-        "port": SMTP_PORT,
-        "use_tls": True,
-    },
-    {
-        "email": "careers@gayatrieducation.tech",
-        "password": "ktdwpvpnmrlmivqd",
-        "name": "Gayatri Education HR Team",
-        "server": SMTP_HOST,
-        "port": SMTP_PORT,
-        "use_tls": True,
-    },
-]
-
-# ============================================================
-# RETRY CONFIGURATION
-# ============================================================
-MAX_RETRIES = 3
-RETRY_BACKOFF_BASE = 30
-
-# ============================================================
-# LOGGING
-# ============================================================
-LOG_FILE = "bot.log"
-DAILY_SUMMARY_RECIPIENT = "contactus@dbert.online"
-
-# ============================================================
-# DATABASE
-# ============================================================
-DATABASE_FILE = "gayatri.db"
 
 # ============================================================
 # COLUMN NAMES IN GOOGLE SHEET
@@ -115,25 +78,17 @@ COL_APPROVAL_STATUS = "Approval Status"
 COL_CONFIRMATION_SENT = "Confirmation Sent"
 
 # ============================================================
-# EMAIL CONTENT
+# EMAIL CONTENT — public links, no secrets
 # ============================================================
 WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/HiKGjnjetq65jHi9UGczYs"
 RESULTS_URL = "https://gayatrieducation.tech/results"
 APPLICATION_URL = "https://docs.google.com/forms/d/e/1FAIpQLScHWe1eoxU52pEzKNGE7PMAQtE2inzRReFibXxg8jDZ-X17KQ/viewform?usp=header"
 
-# ============================================================
-# RESULT EMAIL
-# Sent to every non-enrolled applicant after form submission.
-# No CV analysis needed — profile built from form data only.
-# ============================================================
-
 RESULT_SUBJECT = "Your Application Result — Gayatri Education Project"
 
 # ============================================================
 # REMINDER EMAILS
-# Sent by smtp_sender.py for bulk follow-up campaigns.
 # ============================================================
-
 REMINDER_SUBJECTS = [
     "Reminder: Your Application — Gayatri Education Project",
     "Still Interested? — Gayatri Education Project",
@@ -401,13 +356,6 @@ Best regards,
 Team Gayatri Education
 contactus@dbert.online
 """
-
-# ============================================================
-# FLASK DASHBOARD
-# ============================================================
-FLASK_HOST = "0.0.0.0"
-FLASK_PORT = 5000
-FLASK_DEBUG = False
 
 # ============================================================
 # DEFAULT SKILL REQUIREMENTS
