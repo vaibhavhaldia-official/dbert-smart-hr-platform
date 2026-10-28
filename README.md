@@ -4,7 +4,7 @@
 
 Automated HR and recruitment tooling for the Gayatri Education Project. It polls
 a Google Sheet fed by a Google Form, sends templated result and reminder emails
-through a rotating pool of SMTP senders, generates personalised offer-letter
+through a rotating pool of SMTP senders, generates offer-letter and LOR 
 PDFs, and provides a local admin dashboard over a SQLite database.
 
 **Runs on Windows, macOS and Linux.**
